@@ -5,7 +5,7 @@ import axios from 'axios';
 import { useUIStore } from '../store/useUIStore';
 
 export default function AuthModal() {
-  const { isAuthModalOpen, closeAuthModal } = useUIStore();
+  const { isAuthModalOpen, closeAuthModal, setUser } = useUIStore();
   const [isLogin, setIsLogin] = useState(true);
   
   const [formData, setFormData] = useState({ firstName: '', email: '', password: '' });
@@ -29,6 +29,8 @@ export default function AuthModal() {
       
       // Sauvegarder le token et fermer
       localStorage.setItem('lookme_token', data.token);
+      setUser({ firstName: data.firstName, email: data.email, role: data.role });
+      
       alert(isLogin ? "Connexion réussie ! 💖" : "Bienvenue dans le Club Rose ! ✨");
       
       // Reset form

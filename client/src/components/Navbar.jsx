@@ -1,9 +1,10 @@
 import { Search, ShoppingBag, User, Menu } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useUIStore } from '../store/useUIStore';
+import { Link } from 'react-router-dom';
 
 export default function Navbar() {
-  const openAuthModal = useUIStore((state) => state.openAuthModal);
+  const { openAuthModal, user } = useUIStore();
 
   return (
     <motion.nav 
@@ -22,14 +23,15 @@ export default function Navbar() {
         <motion.a 
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          href="/" 
+          as={Link}
+          to="/" 
           className="text-3xl font-extrabold tracking-tighter text-slate-800 hover:text-pink-500 transition-colors"
         >
           LOOK<span className="text-pink-500">ME</span>
         </motion.a>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex space-x-8 text-sm font-bold text-slate-600">
+        <div className="hidden md:flex items-center space-x-8 text-sm font-bold text-slate-600">
           {['Nouveautés', 'Robes', 'Tops', 'Accessoires'].map((item) => (
             <motion.a 
               key={item}
@@ -40,6 +42,12 @@ export default function Navbar() {
               {item}
             </motion.a>
           ))}
+          
+          {user && user.role === 'admin' && (
+            <Link to="/admin" className="px-4 py-2 bg-pink-100 text-pink-600 rounded-lg hover:bg-pink-500 hover:text-white transition-all shadow-sm">
+              👑 Admin
+            </Link>
+          )}
         </div>
 
         {/* Icons */}

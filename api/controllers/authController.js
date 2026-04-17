@@ -51,6 +51,7 @@ exports.registerUser = async (req, res) => {
         _id: user._id,
         firstName: user.firstName,
         email: user.email,
+        role: user.role,
         token: generateToken(user._id),
       });
     } else {
@@ -81,6 +82,7 @@ exports.loginUser = async (req, res) => {
         _id: user._id,
         firstName: user.firstName,
         email: user.email,
+        role: user.role,
         token: generateToken(user._id),
       });
     } else {
