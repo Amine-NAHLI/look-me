@@ -1,11 +1,46 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
+import axios from 'axios';
 import { useUIStore } from '../store/useUIStore';
 
 export default function AuthModal() {
   const { isAuthModalOpen, closeAuthModal } = useUIStore();
   const [isLogin, setIsLogin] = useState(true);
+  
+  const [formData, setFormData] = useState({ firstName: '', email: '', password: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Gérer la soumission au Backend
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    
+    try {
+      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+      const payload = isLogin 
+        ? { email: formData.email, password: formData.password } 
+        : formData;
+      
+      // Appel à l'API Node.js/MongoDB sur le port 5000
+      const { data } = await axios.post(`http://localhost:5000${endpoint}`, payload);
+      
+      // Sauvegarder le token et fermer
+      localStorage.setItem('lookme_token', data.token);
+      alert(isLogin ? "Connexion réussie ! 💖" : "Bienvenue dans le Club Rose ! ✨");
+      
+      // Reset form
+      setFormData({ firstName: '', email: '', password: '' });
+      closeAuthModal();
+      
+    } catch (err) {
+      setError(err.response?.data?.message || 'Une erreur de connexion est survenue');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -46,13 +81,22 @@ export default function AuthModal() {
 
             {/* Formulaire */}
             <div className="p-8">
-              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-500 text-sm font-bold rounded-xl text-center">
+                  {error}
+                </div>
+              )}
+
+              <form className="space-y-4" onSubmit={handleSubmit}>
                 {!isLogin && (
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">Prénom</label>
                     <input 
                       type="text" 
+                      required
                       placeholder="Jane"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:border-pink-500 focus:bg-white outline-none transition-all text-slate-800"
                     />
                   </div>
@@ -62,7 +106,10 @@ export default function AuthModal() {
                   <label className="block text-sm font-bold text-slate-700 mb-1">Adresse E-mail</label>
                   <input 
                     type="email" 
+                    required
                     placeholder="hello@exemple.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:border-pink-500 focus:bg-white outline-none transition-all text-slate-800"
                   />
                 </div>
@@ -74,12 +121,19 @@ export default function AuthModal() {
                   </div>
                   <input 
                     type="password" 
+                    required
                     placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:border-pink-500 focus:bg-white outline-none transition-all text-slate-800"
                   />
                 </div>
 
-                <button className="w-full py-3 mt-4 bg-pink-500 text-white rounded-xl font-bold shadow-lg shadow-pink-200 hover:bg-pink-600 transition-colors transform active:scale-95">
+                <button 
+                  disabled={loading}
+                  className="w-full py-3 mt-4 flex justify-center items-center gap-2 bg-pink-500 text-white rounded-xl font-bold shadow-lg shadow-pink-200 hover:bg-pink-600 transition-colors transform active:scale-95 disabled:opacity-70 disabled:active:scale-100"
+                >
+                  {loading && <Loader2 size={18} className="animate-spin" />}
                   {isLogin ? 'Se Connecter' : "S'inscrire"}
                 </button>
               </form>
@@ -88,7 +142,10 @@ export default function AuthModal() {
               <div className="mt-8 text-center text-sm font-medium text-slate-500">
                 {isLogin ? "Vous n'avez pas de compte ? " : "Vous possédez déjà un compte ? "}
                 <button 
-                  onClick={() => setIsLogin(!isLogin)}
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setError('');
+                  }}
                   className="text-pink-500 font-bold hover:underline"
                 >
                   {isLogin ? "Inscrivez-vous ici" : "Connectez-vous ici"}
