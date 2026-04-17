@@ -1,41 +1,70 @@
 import { Search, ShoppingBag, User, Menu } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useUIStore } from '../store/useUIStore';
 
 export default function Navbar() {
+  const openAuthModal = useUIStore((state) => state.openAuthModal);
+
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-secondary bg-background/80 backdrop-blur-md">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+    <motion.nav 
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-pink-500/10 shadow-sm"
+    >
+      <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         {/* Mobile Menu */}
-        <button className="md:hidden p-2 text-foreground/80 hover:text-accent transition-colors">
+        <button className="md:hidden p-2 text-slate-500 hover:text-pink-500 transition-colors">
           <Menu size={24} />
         </button>
 
         {/* Logo */}
-        <a href="/" className="text-2xl font-bold tracking-tighter hover:text-accent transition-colors">
-          LOOK<span className="text-accent">ME</span>.
-        </a>
+        <motion.a 
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          href="/" 
+          className="text-3xl font-extrabold tracking-tighter text-slate-800 hover:text-pink-500 transition-colors"
+        >
+          LOOK<span className="text-pink-500">ME</span>
+        </motion.a>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex space-x-8 text-sm font-medium">
-          <a href="#" className="text-foreground/80 hover:text-accent transition-colors">New Arrivals</a>
-          <a href="#" className="text-foreground/80 hover:text-accent transition-colors">Collections</a>
-          <a href="#" className="text-foreground/80 hover:text-accent transition-colors">Accessories</a>
-          <a href="#" className="text-foreground/80 hover:text-accent transition-colors">About</a>
+        <div className="hidden md:flex space-x-8 text-sm font-bold text-slate-600">
+          {['Nouveautés', 'Robes', 'Tops', 'Accessoires'].map((item) => (
+            <motion.a 
+              key={item}
+              whileHover={{ y: -2, color: '#ec4899' }}
+              href="#" 
+              className="transition-colors"
+            >
+              {item}
+            </motion.a>
+          ))}
         </div>
 
         {/* Icons */}
-        <div className="flex items-center space-x-4">
-          <button className="p-2 text-foreground/80 hover:text-accent transition-colors">
-            <Search size={20} />
-          </button>
-          <button className="p-2 text-foreground/80 hover:text-accent transition-colors">
-            <User size={20} />
-          </button>
-          <button className="p-2 text-foreground/80 hover:text-accent transition-colors relative">
-            <ShoppingBag size={20} />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full"></span>
-          </button>
+        <div className="flex items-center space-x-1 sm:space-x-4">
+          <motion.button whileHover={{ scale: 1.1, backgroundColor: '#fdf2f8' }} className="p-2 text-slate-500 hover:text-pink-500 rounded-full transition-colors">
+            <Search size={22} />
+          </motion.button>
+          <motion.button 
+            onClick={openAuthModal}
+            whileHover={{ scale: 1.1, backgroundColor: '#fdf2f8' }} 
+            className="p-2 text-slate-500 hover:text-pink-500 rounded-full transition-colors"
+          >
+            <User size={22} />
+          </motion.button>
+          <motion.button whileHover={{ scale: 1.1, backgroundColor: '#fdf2f8' }} className="p-2 text-slate-500 hover:text-pink-500 rounded-full transition-colors relative">
+            <ShoppingBag size={22} />
+            <motion.span 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 1, type: "spring" }}
+              className="absolute top-1 right-1 w-2.5 h-2.5 bg-pink-500 border-2 border-white rounded-full"
+            />
+          </motion.button>
         </div>
       </div>
-    </nav>
+    </motion.nav>
   );
 }

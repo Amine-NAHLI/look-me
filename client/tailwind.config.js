@@ -7,12 +7,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#050505',
-        foreground: '#fafafa',
-        primary: '#ffffff',
-        'primary-foreground': '#000000',
-        secondary: '#171717',
-        accent: '#d4af37', // Gold accent for premium feel
+        background: '#ffffff', // Blanc pur
+        foreground: '#334155', // Gris doux
+        secondary: '#fdf2f8', // Rose extrêmement léger
+        accent: '#ec4899', // Rose vif (Pink 500)
+        'accent-light': '#fbcfe8',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
