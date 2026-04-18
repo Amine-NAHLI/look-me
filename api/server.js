@@ -17,6 +17,10 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Rendre le dossier des images accessible publiquement
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/categories', require('./routes/categoryRoutes'));

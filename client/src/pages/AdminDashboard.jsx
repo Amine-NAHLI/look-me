@@ -15,8 +15,9 @@ export default function AdminDashboard() {
   // States - Products
   const [products, setProducts] = useState([]);
   const [prodForm, setProdForm] = useState({
-    name: '', description: '', price: '', category: '', image: ''
+    name: '', description: '', price: '', category: ''
   });
+  const [imageFile, setImageFile] = useState(null);
   
   // UI States
   const [loading, setLoading] = useState(false);
@@ -74,10 +75,29 @@ export default function AdminDashboard() {
   // Handlers - Product
   const addProduct = async (e) => {
     e.preventDefault();
+    if (!imageFile) {
+      setMsg({ text: 'Veuillez choisir une image locale.', type: 'error' });
+      return;
+    }
+
     setLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/products', prodForm, config);
-      setProdForm({ name: '', description: '', price: '', category: '', image: '' });
+      const formData = new FormData();
+      formData.append('name', prodForm.name);
+      formData.append('description', prodForm.description);
+      formData.append('price', prodForm.price);
+      formData.append('category', prodForm.category);
+      formData.append('image', imageFile);
+
+      await axios.post('http://localhost:5000/api/products', formData, config);
+      
+      setProdForm({ name: '', description: '', price: '', category: '' });
+      setImageFile(null);
+      // Reset input file visually
+      if(document.getElementById('file-upload')) {
+        document.getElementById('file-upload').value = '';
+      }
+
       setMsg({ text: 'Produit publié dans le catalogue !', type: 'success' });
       fetchProducts();
     } catch(err) {
@@ -211,8 +231,15 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Lien Image (Web)</label>
-                    <input required type="text" value={prodForm.image} onChange={(e) => setProdForm({...prodForm, image: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border rounded-lg" placeholder="https://..." />
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Image depuis votre ordinateur/téléphone</label>
+                    <input 
+                      id="file-upload"
+                      required 
+                      type="file" 
+                      accept="image/png, image/jpeg, image/jpg, image/webp"
+                      onChange={(e) => setImageFile(e.target.files[0])} 
+                      className="w-full px-4 py-2 bg-slate-50 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-pink-50 file:text-pink-600 hover:file:bg-pink-100" 
+                    />
                   </div>
                   <button disabled={loading} className="w-full bg-slate-800 hover:bg-black text-white py-3 rounded-xl font-bold mt-4 shadow-lg shadow-slate-200">
                     {loading ? 'Publication...' : 'Publier le Produit'}
