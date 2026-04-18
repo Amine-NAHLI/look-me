@@ -1,5 +1,5 @@
 import { Search, ShoppingBag, User, Menu } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../store/useUIStore';
 import { Link } from 'react-router-dom';
 
