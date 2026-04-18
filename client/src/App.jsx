@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import AuthModal from './components/AuthModal'
+import CartDrawer from './components/CartDrawer'
 import Home from './pages/Home'
 import AdminDashboard from './pages/AdminDashboard'
 import './index.css'
@@ -19,6 +20,7 @@ function App() {
 
         <Footer />
         <AuthModal />
+        <CartDrawer />
       </div>
     </Router>
   )

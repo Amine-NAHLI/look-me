@@ -4,7 +4,10 @@ import { useUIStore } from '../store/useUIStore';
 import { Link } from 'react-router-dom';
 
 export default function Navbar() {
-  const { openAuthModal, user } = useUIStore();
+  const { openAuthModal, user, cart, openCart } = useUIStore();
+  
+  // Compter le nombre total d'articles (somme des quantités)
+  const cartItemCount = cart.reduce((total, item) => total + item.qty, 0);
 
   return (
     <motion.nav 
@@ -36,7 +39,7 @@ export default function Navbar() {
             <motion.a 
               key={item}
               whileHover={{ y: -2, color: '#ec4899' }}
-              href="#" 
+              href="/#catalogue" 
               className="transition-colors"
             >
               {item}
@@ -62,14 +65,25 @@ export default function Navbar() {
           >
             <User size={22} />
           </motion.button>
-          <motion.button whileHover={{ scale: 1.1, backgroundColor: '#fdf2f8' }} className="p-2 text-slate-500 hover:text-pink-500 rounded-full transition-colors relative">
+          <motion.button 
+            onClick={openCart}
+            whileHover={{ scale: 1.1, backgroundColor: '#fdf2f8' }} 
+            className="p-2 text-slate-500 hover:text-pink-500 rounded-full transition-colors relative"
+          >
             <ShoppingBag size={22} />
-            <motion.span 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 1, type: "spring" }}
-              className="absolute top-1 right-1 w-2.5 h-2.5 bg-pink-500 border-2 border-white rounded-full"
-            />
+            <AnimatePresence>
+              {cartItemCount > 0 && (
+                <motion.span 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                  transition={{ type: "spring" }}
+                  className="absolute top-0 right-0 w-4 h-4 flex items-center justify-center bg-pink-500 text-white text-[10px] font-bold border-2 border-white rounded-full"
+                >
+                  {cartItemCount}
+                </motion.span>
+              )}
+            </AnimatePresence>
           </motion.button>
         </div>
       </div>

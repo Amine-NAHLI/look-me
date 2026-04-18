@@ -1,6 +1,19 @@
-import { Mail, Globe, MessageCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Mail, Globe, MessageCircle, CheckCircle2 } from 'lucide-react';
 
 export default function Footer() {
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    if(email) {
+      setSubscribed(true);
+      setEmail('');
+      setTimeout(() => setSubscribed(false), 3000);
+    }
+  };
+
   return (
     <footer className="border-t border-pink-100 mt-24 bg-white pt-16 pb-8">
       <div className="container mx-auto px-4">
@@ -42,19 +55,28 @@ export default function Footer() {
           <div>
             <h4 className="font-bold text-slate-800 mb-6 uppercase tracking-wider text-sm">Club Rose</h4>
             <p className="text-sm text-slate-500 mb-4 font-medium">Inscrivez-vous pour gagner des points, des surprises exclusives et découvrir nos nouveautés.</p>
-            <form className="flex border-2 border-pink-100 focus-within:border-pink-500 transition-colors rounded-full overflow-hidden">
-              <input 
-                type="email" 
-                placeholder="Votre email" 
-                className="bg-white px-6 py-3 w-full text-sm outline-none placeholder:text-slate-400 text-slate-700"
-              />
-              <button 
-                type="submit"
-                className="bg-pink-500 px-6 text-sm font-bold hover:bg-pink-600 text-white transition-colors"
-              >
-                Go!
-              </button>
-            </form>
+            {subscribed ? (
+               <div className="flex items-center gap-2 text-pink-500 font-bold bg-pink-50 px-4 py-3 rounded-xl border border-pink-100">
+                  <CheckCircle2 size={20} />
+                  Merci pour votre inscription !
+               </div>
+            ) : (
+                <form onSubmit={handleSubscribe} className="flex border-2 border-pink-100 focus-within:border-pink-500 transition-colors rounded-full overflow-hidden">
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Votre email" 
+                    className="bg-white px-6 py-3 w-full text-sm outline-none placeholder:text-slate-400 text-slate-700"
+                  />
+                  <button 
+                    type="submit"
+                    className="bg-pink-500 px-6 text-sm font-bold hover:bg-pink-600 text-white transition-colors"
+                  >
+                    Go!
+                  </button>
+                </form>
+            )}
           </div>
         </div>
         

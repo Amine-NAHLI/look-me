@@ -47,7 +47,8 @@ export default function Hero() {
           </motion.p>
           
           <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-            <motion.button 
+            <motion.a 
+              href="#catalogue"
               whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(236, 72, 153, 0.3)" }}
               whileTap={{ scale: 0.95 }}
               className="group flex items-center justify-center gap-2 bg-pink-500 text-white px-8 py-4 rounded-full font-bold shadow-lg shadow-pink-200"
@@ -59,14 +60,15 @@ export default function Hero() {
               >
                 <ArrowRight size={18} />
               </motion.div>
-            </motion.button>
-            <motion.button 
+            </motion.a>
+            <motion.a 
+              href="#catalogue"
               whileHover={{ scale: 1.05, backgroundColor: "#fdf2f8" }}
               whileTap={{ scale: 0.95 }}
               className="flex items-center justify-center gap-2 bg-white border-2 border-pink-500 text-pink-500 px-8 py-4 rounded-full font-bold"
             >
               Voir la galerie
-            </motion.button>
+            </motion.a>
           </motion.div>
         </motion.div>
         
