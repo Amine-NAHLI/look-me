@@ -6,7 +6,8 @@ const { protect, admin } = require('../middlewares/authMiddleware');
 // Get all products (Public)
 router.get('/', async (req, res) => {
   try {
-    const products = await Product.find({});
+    // Populate remplace l'ID de la catégorie par son objet complet pour affichage
+    const products = await Product.find({}).populate('category', 'name');
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: "Erreur serveur" });
@@ -16,8 +17,8 @@ router.get('/', async (req, res) => {
 // Add a product (Admin only)
 router.post('/', protect, admin, async (req, res) => {
   try {
-    const { name, category, price, image, inStock } = req.body;
-    const product = new Product({ name, category, price, image, inStock });
+    const { name, description, category, price, image, inStock } = req.body;
+    const product = new Product({ name, description, category, price, image, inStock });
     const createdProduct = await product.save();
     res.status(201).json(createdProduct);
   } catch (error) {

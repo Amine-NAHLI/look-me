@@ -88,7 +88,9 @@ export default function CartDrawer() {
                             <Trash2 size={16} />
                           </button>
                         </div>
-                        <p className="text-xs text-pink-500 font-bold uppercase mt-1">{item.category}</p>
+                        <p className="text-xs text-pink-500 font-bold uppercase mt-1">
+                          {item.category?.name || item.category || 'Article'}
+                        </p>
                       </div>
                       
                       <div className="flex items-center justify-between mt-4">

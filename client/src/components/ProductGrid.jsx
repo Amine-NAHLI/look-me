@@ -114,8 +114,17 @@ export default function ProductGrid() {
                 </div>
               </div>
               <div className="text-center sm:text-left px-2 flex-grow flex flex-col justify-end">
-                <p className="text-xs text-pink-500 uppercase font-bold tracking-widest mb-1">{product.category}</p>
-                <h3 className="text-lg font-bold text-slate-800 leading-tight group-hover:text-pink-500 transition-colors">{product.name}</h3>
+                <p className="text-xs text-pink-500 uppercase font-bold tracking-widest mb-1">
+                  {product.category?.name || 'Robe'}
+                </p>
+                <h3 className="text-lg font-bold text-slate-800 leading-tight group-hover:text-pink-500 transition-colors">
+                  {product.name}
+                </h3>
+                {product.description && (
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                    {product.description}
+                  </p>
+                )}
                 <p className="text-lg font-extrabold text-slate-600 mt-2">{product.price}€</p>
               </div>
             </motion.div>
