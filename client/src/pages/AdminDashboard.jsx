@@ -26,6 +26,8 @@ export default function AdminDashboard() {
   const [newCatImage, setNewCatImage] = useState(null);
   
   const [prodForm, setProdForm] = useState({ name: '', description: '', price: '', category: '', image: null });
+  const [editingProd, setEditingProd] = useState(null);
+  const [btnLoading, setBtnLoading] = useState(false);
 
   // Stats
   const revenue = orders.filter(o => o.status === 'delivered').reduce((acc, o) => acc + o.totalPrice, 0);
@@ -87,20 +89,47 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!prodForm.image) return toast.error("Image requise");
     
-    // In our adapted version, the real backend upload is handled by ImageUploader which returns the path.
-    // If you prefer to send JSON with imageUrl, you do that. Or FormData if backend expects form-data.
+    setBtnLoading(true);
     try {
-      // Assuming backend expects JSON since image is already uploaded and we have the URL
-      await api.post('/products', prodForm);
-      toast.success("Produit ajouté !");
+      if (editingProd) {
+        await api.put(`/products/${editingProd}`, prodForm);
+        toast.success("Produit mis à jour !");
+      } else {
+        await api.post('/products', prodForm);
+        toast.success("Produit ajouté !");
+      }
       setProdForm({ name: '', description: '', price: '', category: '', image: null });
+      setEditingProd(null);
       fetchData();
-    } catch (e) { toast.error("Erreur lors de l'ajout"); }
+    } catch (e) { 
+      toast.error(e.response?.data?.message || "Erreur"); 
+    } finally {
+      setBtnLoading(false);
+    }
+  };
+
+  const deleteProduct = async (id) => {
+    if (!window.confirm("Supprimer ce produit ?")) return;
+    try {
+      await api.delete(`/products/${id}`);
+      toast.success("Produit supprimé");
+      fetchData();
+    } catch (e) { toast.error("Erreur"); }
+  };
+
+  const deleteCategory = async (id) => {
+    if (!window.confirm("Supprimer cette catégorie ?")) return;
+    try {
+      await api.delete(`/categories/${id}`);
+      toast.success("Catégorie supprimée");
+      fetchData();
+    } catch (e) { toast.error("Erreur"); }
   };
 
   const addCategory = async (e) => {
     e.preventDefault();
     if (!newCatName || !newCatImage) return toast.error("Nom et image requis");
+    setBtnLoading(true);
     try {
       await api.post('/categories', { name: newCatName, image: newCatImage });
       toast.success("Catégorie ajoutée");
@@ -108,6 +137,7 @@ export default function AdminDashboard() {
       setNewCatImage(null);
       fetchData();
     } catch(e) { toast.error("Erreur"); }
+    finally { setBtnLoading(false); }
   };
 
   const SidebarContent = () => (
@@ -245,7 +275,21 @@ export default function AdminDashboard() {
                       </select>
                     </div>
                     
-                    <button className="w-full bg-[#1C1C1C] text-white font-body font-semibold text-[11px] uppercase tracking-[2px] py-[14px] rounded-[var(--radius-sm)] hover:bg-[#C2185B] transition-colors mt-4">Enregistrer</button>
+                    <button 
+                      disabled={btnLoading}
+                      className="w-full bg-[#1C1C1C] text-white font-body font-semibold text-[11px] uppercase tracking-[2px] py-[14px] rounded-[var(--radius-sm)] hover:bg-[#C2185B] transition-colors mt-4 flex items-center justify-center gap-2"
+                    >
+                      {btnLoading ? <Loader2 size={16} className="animate-spin" /> : (editingProd ? 'Mettre à jour' : 'Enregistrer')}
+                    </button>
+                    {editingProd && (
+                      <button 
+                        type="button"
+                        onClick={() => { setEditingProd(null); setProdForm({ name: '', description: '', price: '', category: '', image: null }); }}
+                        className="w-full bg-gray-100 text-gray-500 font-body font-semibold text-[11px] uppercase tracking-[2px] py-[10px] rounded-[var(--radius-sm)] hover:bg-gray-200 transition-colors"
+                      >
+                        Annuler
+                      </button>
+                    )}
                   </form>
 
                   {/* Products List */}
@@ -269,8 +313,22 @@ export default function AdminDashboard() {
                                   <span className="font-body font-medium text-[12px] md:text-[13px] text-[var(--dark)] truncate max-w-[120px] md:max-w-xs">{p.name}</span>
                                </td>
                                <td className="px-4 md:px-6 py-4 text-[12px] md:text-[13px] font-body font-semibold text-[#1C1C1C]">{formatPrice(p.price)}</td>
-                               <td className="px-4 md:px-6 py-4 text-right">
-                                  <button className="text-[10px] md:text-[11px] font-body uppercase tracking-[1px] text-[var(--error)] hover:text-[#880E4F] px-2 md:px-3 py-1 transition-colors">Supprimer</button>
+                               <td className="px-4 md:px-6 py-4 text-right flex items-center justify-end gap-2">
+                                  <button 
+                                    onClick={() => {
+                                      setEditingProd(p._id);
+                                      setProdForm({ name: p.name, description: p.description, price: p.price, category: p.category?._id || p.category, image: p.image });
+                                    }}
+                                    className="text-[10px] md:text-[11px] font-body uppercase tracking-[1px] text-[var(--dark)] hover:text-[#C2185B] px-2 py-1 transition-colors"
+                                  >
+                                    Modifier
+                                  </button>
+                                  <button 
+                                    onClick={() => deleteProduct(p._id)}
+                                    className="text-[10px] md:text-[11px] font-body uppercase tracking-[1px] text-[var(--error)] hover:text-[#880E4F] px-2 md:px-3 py-1 transition-colors"
+                                  >
+                                    Supprimer
+                                  </button>
                                </td>
                              </motion.tr>
                            ))}
@@ -292,7 +350,13 @@ export default function AdminDashboard() {
                   <form onSubmit={addCategory} className="space-y-6 mt-8 text-left">
                     <ImageUploader onUploadComplete={setNewCatImage} />
                     <input required value={newCatName} onChange={e=>setNewCatName(e.target.value)} type="text" placeholder="Nom de la catégorie" className="w-full px-4 py-3 border border-[var(--border)] rounded-[var(--radius-sm)] focus:outline-none focus:border-[#C2185B] font-body text-[14px] bg-[#F5F5F5]" />
-                    <button type="submit" className="w-full bg-[#1C1C1C] hover:bg-[#C2185B] text-white px-6 py-3 rounded-[var(--radius-sm)] font-body font-semibold text-[11px] uppercase tracking-[1.5px] transition-colors">Ajouter la catégorie</button>
+                    <button 
+                      type="submit" 
+                      disabled={btnLoading}
+                      className="w-full bg-[#1C1C1C] hover:bg-[#C2185B] text-white px-6 py-3 rounded-[var(--radius-sm)] font-body font-semibold text-[11px] uppercase tracking-[1.5px] transition-colors flex justify-center items-center gap-2"
+                    >
+                      {btnLoading ? <Loader2 size={16} className="animate-spin" /> : 'Ajouter la catégorie'}
+                    </button>
                   </form>
 
                   {categories.length > 0 && (
@@ -305,7 +369,12 @@ export default function AdminDashboard() {
                             </span>
                             {c.name}
                           </span>
-                          <button className="text-[11px] font-body uppercase tracking-[1px] text-[var(--error)] hover:text-[#880E4F] transition-colors">Supprimer</button>
+                          <button 
+                            onClick={() => deleteCategory(c._id)}
+                            className="text-[11px] font-body uppercase tracking-[1px] text-[var(--error)] hover:text-[#880E4F] transition-colors"
+                          >
+                            Supprimer
+                          </button>
                         </li>
                       ))}
                     </ul>

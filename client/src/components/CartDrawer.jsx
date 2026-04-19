@@ -68,7 +68,7 @@ export default function CartDrawer() {
                   <ShoppingBag size={48} className="text-[#C2185B] mb-6 opacity-40" strokeWidth={1} />
                   <h3 className="font-heading italic text-[24px] text-gray-400 mb-6 font-normal">Votre panier est vide</h3>
                   <button 
-                    onClick={closeCart}
+                    onClick={() => { navigate('/catalogue'); closeCart(); }}
                     className="bg-[var(--dark)] text-white font-body font-semibold text-[11px] uppercase tracking-[2px] px-[32px] py-[14px] hover:bg-[#C2185B] transition-colors"
                   >
                     Découvrir la collection
@@ -107,14 +107,26 @@ export default function CartDrawer() {
                         <div className="flex items-center justify-between mt-auto">
                           <div className="flex items-center border border-[var(--border)]">
                             <button 
-                              onClick={() => updateQuantity(item._id, Math.max(1, item.qty - 1))}
+                              onClick={() => {
+                                if (item.qty > 1) {
+                                  updateQuantity(item._id, item.qty - 1);
+                                } else {
+                                  handleRemove(item._id, item.name);
+                                }
+                              }}
                               className="w-8 h-8 flex items-center justify-center text-[var(--dark)] hover:text-[#C2185B] transition-colors"
                             >
                               <Minus size={14} strokeWidth={1.5} />
                             </button>
                             <span className="w-8 text-center font-body font-medium text-[12px]">{item.qty}</span>
                             <button 
-                              onClick={() => updateQuantity(item._id, item.qty + 1)}
+                              onClick={() => {
+                                if (item.qty < (item.countInStock || 99)) {
+                                  updateQuantity(item._id, item.qty + 1);
+                                } else {
+                                  toast.error("Stock maximum atteint");
+                                }
+                              }}
                               className="w-8 h-8 flex items-center justify-center text-[var(--dark)] hover:text-[#C2185B] transition-colors"
                             >
                               <Plus size={14} strokeWidth={1.5} />

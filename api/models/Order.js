@@ -1,7 +1,12 @@
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+  orderNumber: { type: String, unique: true },
+  user: { type: mongoose.Schema.Types.ObjectId, required: false, ref: 'User' },
+  customerName: { type: String, required: true },
+  phone: { type: String, required: true },
+  address: { type: String, required: true },
+  city: { type: String, required: true },
   orderItems: [
     {
       name: { type: String, required: true },
@@ -11,21 +16,42 @@ const orderSchema = new mongoose.Schema({
       product: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Product' },
     }
   ],
-  shippingAddress: {
-    address: { type: String, required: true },
-    city: { type: String, required: true },
-    postalCode: { type: String, required: true },
-    phone: { type: String, required: true },
-  },
+  subtotal: { type: Number, required: true, default: 0.0 },
+  deliveryFee: { type: Number, required: true, default: 0.0 },
   totalPrice: { type: Number, required: true, default: 0.0 },
-  paymentMethod: { type: String, required: true, default: 'Cash on Delivery' },
+  paymentMethod: { type: String, required: true, default: 'cash_on_delivery' },
   status: { 
     type: String, 
     required: true, 
     enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'],
     default: 'pending' 
   },
+  statusHistory: [
+    {
+      status: String,
+      date: { type: Date, default: Date.now },
+      note: String
+    }
+  ],
   isPaid: { type: Boolean, required: true, default: false },
 }, { timestamps: true });
+
+// Auto-generate order number
+orderSchema.pre('save', async function (next) {
+  if (this.isNew) {
+    const Order = mongoose.model('Order');
+    const count = await Order.countDocuments();
+    const num = String(count + 1).padStart(3, '0');
+    this.orderNumber = `LM-${new Date().getFullYear()}-${num}`;
+    
+    // Initial status history
+    this.statusHistory = [{
+      status: 'pending',
+      date: new Date(),
+      note: 'Commande reçue'
+    }];
+  }
+  next();
+});
 
 module.exports = mongoose.model('Order', orderSchema);

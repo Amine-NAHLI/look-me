@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import ProductGrid from '../components/ProductGrid';
-import { Truck, CreditCard, ShieldCheck, Headphones } from 'lucide-react';
+import { Truck, CreditCard, ShieldCheck, Headphones, ArrowRight } from 'lucide-react';
 import { motion, useInView } from 'framer-motion';
 import { fadeInUp, fadeIn, staggerContainer } from '../utils/animations';
 import { useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
+  const navigate = useNavigate();
   const reassuranceRef = useRef(null);
   const isReassuranceInView = useInView(reassuranceRef, { once: true, margin: "-50px" });
 
@@ -56,6 +58,7 @@ export default function Home() {
             variants={fadeInUp}
             initial="hidden"
             animate="visible"
+            onClick={() => navigate('/catalogue')}
             whileHover={{ scale: 1.02, backgroundColor: '#C2185B', color: '#fff' }}
             whileTap={{ scale: 0.98 }}
             transition={{ delay: 0.7, duration: 0.3 }}
@@ -105,7 +108,13 @@ export default function Home() {
             <h2 className="font-heading font-semibold text-[36px] text-black mb-6 tracking-wide">
               Sélection du Moment
             </h2>
-            <div className="h-[2px] w-[40px] bg-[#C2185B]" />
+            <div className="h-[2px] w-[40px] bg-[#C2185B] mb-8" />
+            <button 
+              onClick={() => navigate('/catalogue')}
+              className="font-body text-[11px] uppercase tracking-[2px] font-bold text-[var(--gray)] hover:text-[#C2185B] transition-colors flex items-center gap-2"
+            >
+              Voir tout le catalogue <ArrowRight size={14} />
+            </button>
           </div>
           
           <ProductGrid />

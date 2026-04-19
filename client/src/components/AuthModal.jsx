@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Sparkles, LogIn } from 'lucide-react';
+import { X, Loader2, Sparkles, LogIn, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { useUIStore } from '../store/useUIStore';
 import toast from 'react-hot-toast';
@@ -9,9 +9,10 @@ export default function AuthModal() {
   const { isAuthModalOpen, closeAuthModal, setUser } = useUIStore();
   const [isLogin, setIsLogin] = useState(true);
   
-  const [formData, setFormData] = useState({ firstName: '', email: '', password: '' });
+  const [formData, setFormData] = useState({ firstName: '', email: '', password: '', phone: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Gérer la soumission au Backend
   const handleSubmit = async (e) => {
@@ -28,11 +29,11 @@ export default function AuthModal() {
       const { data } = await axios.post(`http://localhost:5000${endpoint}`, payload);
       
       localStorage.setItem('lookme_token', data.token);
-      setUser({ firstName: data.firstName, email: data.email, role: data.role });
+      setUser({ firstName: data.firstName, email: data.email, role: data.role, phone: data.phone });
       
       toast.success(isLogin ? "Heureux de vous revoir ! 💖" : "Bienvenue dans l'univers LookMe ! ✨");
       
-      setFormData({ firstName: '', email: '', password: '' });
+      setFormData({ firstName: '', email: '', password: '', phone: '' });
       closeAuthModal();
       
     } catch (err) {
@@ -94,17 +95,30 @@ export default function AuthModal() {
             <div className="p-10">
               <form className="space-y-5" onSubmit={handleSubmit}>
                 {!isLogin && (
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Prénom</label>
-                    <input 
-                      type="text" 
-                      required
-                      placeholder="Votre prénom"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-pink-500 font-bold transition-all"
-                    />
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Prénom</label>
+                      <input 
+                        type="text" 
+                        required
+                        placeholder="Votre prénom"
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-pink-500 font-bold transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black uppercase tracking-widest text-gray-400 mb-2 ml-1">Téléphone</label>
+                      <input 
+                        type="tel" 
+                        required
+                        placeholder="06XXXXXXXX"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-pink-500 font-bold transition-all"
+                      />
+                    </div>
+                  </>
                 )}
                 
                 <div>
@@ -122,15 +136,33 @@ export default function AuthModal() {
                 <div>
                   <div className="flex justify-between items-center mb-2 ml-1">
                     <label className="block text-xs font-black uppercase tracking-widest text-gray-400">Mot de Passe</label>
+                    {isLogin && (
+                      <button 
+                        type="button"
+                        onClick={() => toast.success("Lien de réinitialisation envoyé à votre email")}
+                        className="text-[10px] text-pink-500 font-bold uppercase tracking-wider hover:underline"
+                      >
+                        Oublié ?
+                      </button>
+                    )}
                   </div>
-                  <input 
-                    type="password" 
-                    required
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-pink-500 font-bold transition-all"
-                  />
+                  <div className="relative">
+                    <input 
+                      type={showPassword ? "text" : "password"} 
+                      required
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-pink-500 font-bold transition-all pr-14"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500 transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
                 </div>
 
                 <button 

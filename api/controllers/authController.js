@@ -13,6 +13,7 @@ const generateToken = (id) => {
 const registerSchema = z.object({
   firstName: z.string().min(2, "Le prénom est trop court"),
   email: z.string().email("Format d'email invalide"),
+  phone: z.string().optional(),
   password: z.string().min(6, "Le mot de passe doit faire au moins 6 caractères")
 });
 
@@ -31,7 +32,7 @@ exports.registerUser = async (req, res) => {
       return res.status(400).json({ message: parsedData.error.errors[0].message });
     }
 
-    const { firstName, email, password } = parsedData.data;
+    const { firstName, email, password, phone } = parsedData.data;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
@@ -43,7 +44,8 @@ exports.registerUser = async (req, res) => {
     const user = await User.create({
       firstName,
       email,
-      password
+      password,
+      phone
     });
 
     if (user) {
@@ -51,6 +53,7 @@ exports.registerUser = async (req, res) => {
         _id: user._id,
         firstName: user.firstName,
         email: user.email,
+        phone: user.phone,
         role: user.role,
         token: generateToken(user._id),
       });
@@ -83,6 +86,7 @@ exports.loginUser = async (req, res) => {
         firstName: user.firstName,
         email: user.email,
         role: user.role,
+        phone: user.phone,
         token: generateToken(user._id),
       });
     } else {
@@ -90,5 +94,84 @@ exports.loginUser = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: "Erreur lors de la connexion" });
+  }
+};
+
+// @desc    Get user profile
+// @route   GET /api/users/me
+// @access  Private
+exports.getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (user) {
+      res.json({
+        _id: user._id,
+        firstName: user.firstName,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+      });
+    } else {
+      res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+};
+
+// @desc    Update user profile
+// @route   PUT /api/users/me
+// @access  Private
+exports.updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+      // Check if email is already taken by another user
+      if (req.body.email && req.body.email !== user.email) {
+        const emailExists = await User.findOne({ email: req.body.email });
+        if (emailExists) {
+          return res.status(400).json({ message: "Cet email est déjà utilisé" });
+        }
+      }
+
+      user.firstName = req.body.firstName || user.firstName;
+      user.email = req.body.email || user.email;
+      user.phone = req.body.phone || user.phone;
+
+      const updatedUser = await user.save();
+
+      res.json({
+        _id: updatedUser._id,
+        firstName: updatedUser.firstName,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        role: updatedUser.role,
+      });
+    } else {
+      res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la mise à jour" });
+  }
+};
+
+// @desc    Update user password
+// @route   PUT /api/users/me/password
+// @access  Private
+exports.updateUserPassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (user && (await user.matchPassword(oldPassword))) {
+      user.password = newPassword;
+      await user.save();
+      res.json({ message: "Mot de passe mis à jour avec succès" });
+    } else {
+      res.status(401).json({ message: "Ancien mot de passe incorrect" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la mise à jour du mot de passe" });
   }
 };

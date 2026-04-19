@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '../store/useUIStore';
 import api from '../utils/axiosConfig';
 import { getImageUrl } from '../utils/imageUrl';
-import { Truck, MapPin, CreditCard, ShoppingBag, ArrowRight } from 'lucide-react';
+import { getDeliveryFee, formatDeliveryFee, isFesCityFree } from '../utils/delivery';
+import { Truck, MapPin, CreditCard, ShoppingBag, ArrowRight, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatPrice } from '../utils/formatPrice';
 import toast from 'react-hot-toast';
@@ -23,6 +24,10 @@ const Checkout = () => {
   });
 
   const [loading, setLoading] = useState(false);
+
+  const deliveryFee = getDeliveryFee(shippingAddress.city);
+  const subtotal = getCartTotal();
+  const total = subtotal + deliveryFee;
 
   if (cart.length === 0) {
     return (
@@ -47,9 +52,14 @@ const Checkout = () => {
           price: item.price,
           product: item._id
         })),
-        shippingAddress,
-        totalPrice: getCartTotal(),
-        paymentMethod: 'Cash on Delivery'
+        customerName: shippingAddress.fullName,
+        phone: shippingAddress.phone,
+        address: shippingAddress.address,
+        city: shippingAddress.city,
+        subtotal: subtotal,
+        deliveryFee,
+        totalPrice: total,
+        paymentMethod: 'cash_on_delivery'
       };
 
       const { data } = await api.post('/orders', orderData);
@@ -113,7 +123,20 @@ const Checkout = () => {
                   <div className="grid grid-cols-2 gap-6">
                     <div>
                       <label className="block text-[10px] font-body font-semibold uppercase tracking-[1px] text-[var(--gray)] mb-2">Ville</label>
-                      <input required name="city" value={shippingAddress.city} onChange={handleInputChange} className="w-full px-4 py-3 bg-[#F5F5F5] border border-transparent focus:border-[#C2185B] focus:bg-white outline-none font-body text-[14px] transition-colors" placeholder="Ville" />
+                      <input required name="city" value={shippingAddress.city} onChange={handleInputChange} className="w-full px-4 py-3 bg-[#F5F5F5] border border-transparent focus:border-[#C2185B] focus:bg-white outline-none font-body text-[14px] transition-colors" placeholder="Votre ville" />
+                      {shippingAddress.city.trim().length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className={`mt-2 text-[12px] font-body font-medium flex items-center gap-1.5 ${isFesCityFree(shippingAddress.city) ? 'text-[#2E7D32]' : 'text-[#E65100]'}`}
+                        >
+                          {isFesCityFree(shippingAddress.city) ? (
+                            '✓ Livraison gratuite à Fès'
+                          ) : (
+                            'Livraison : 30 DH'
+                          )}
+                        </motion.div>
+                      )}
                     </div>
                     <div>
                       <label className="block text-[10px] font-body font-semibold uppercase tracking-[1px] text-[var(--gray)] mb-2">Code Postal</label>
@@ -187,16 +210,28 @@ const Checkout = () => {
             <div className="space-y-4 pt-6 border-t border-[var(--border)]">
               <div className="flex justify-between items-center font-body text-[11px] uppercase tracking-[1px] text-[var(--gray)]">
                 <span>Sous-total</span>
-                <span className="text-[var(--dark)]">{formatPrice(getCartTotal())}</span>
+                <span className="text-[var(--dark)]">{formatPrice(subtotal)}</span>
               </div>
               <div className="flex justify-between items-center font-body text-[11px] uppercase tracking-[1px] text-[var(--gray)]">
                 <span>Livraison</span>
-                <span className="text-[#2E7D32]">Gratuite</span>
+                <span className={`font-semibold ${isFesCityFree(shippingAddress.city) ? 'text-[#2E7D32]' : 'text-[var(--dark)]'}`}>
+                  {shippingAddress.city.trim() === '' ? '—' : formatDeliveryFee(shippingAddress.city)}
+                </span>
               </div>
               <div className="flex justify-between items-center pt-4 border-t border-[var(--dark)]">
                 <span className="font-body font-semibold text-[14px] uppercase tracking-[1px] text-[var(--dark)]">Total TTC</span>
-                <span className="font-body font-bold text-[20px] text-[#C2185B]">{formatPrice(getCartTotal())}</span>
+                <span className="font-body font-bold text-[20px] text-[#C2185B]">{formatPrice(total)}</span>
               </div>
+              
+              {isFesCityFree(shippingAddress.city) && shippingAddress.city.trim() !== '' && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="mt-3 p-3 bg-[#E8F5E9] rounded-[4px] text-[12px] text-[#2E7D32] font-body font-medium text-center"
+                >
+                  🎉 Vous bénéficiez de la livraison gratuite à Fès !
+                </motion.div>
+              )}
             </div>
 
             {/* Desktop Button */}
@@ -206,7 +241,7 @@ const Checkout = () => {
                 disabled={loading || step !== 2}
                 className="w-full bg-[#1C1C1C] text-white font-body font-semibold text-[11px] uppercase tracking-[2px] py-[16px] hover:bg-[#C2185B] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 group"
               >
-                {loading ? 'Traitement...' : 'Confirmer l\'achat'} <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                {loading ? <Loader2 size={16} className="animate-spin" /> : 'Confirmer l\'achat'} {!loading && <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />}
               </button>
             </div>
           </motion.div>
@@ -220,9 +255,9 @@ const Checkout = () => {
            <button 
             onClick={handleSubmitOrder}
             disabled={loading}
-            className="w-full bg-[#1C1C1C] text-white font-body font-semibold text-[11px] uppercase tracking-[2px] py-[16px] active:bg-[#C2185B] transition-colors"
+            className="w-full bg-[#1C1C1C] text-white font-body font-semibold text-[11px] uppercase tracking-[2px] py-[16px] active:bg-[#C2185B] transition-colors flex justify-center items-center gap-2"
           >
-            {loading ? 'Traitement...' : `Confirmer • ${formatPrice(getCartTotal())}`}
+            {loading ? <Loader2 size={16} className="animate-spin" /> : `Confirmer • ${formatPrice(total)}`}
           </button>
         </div>
       )}

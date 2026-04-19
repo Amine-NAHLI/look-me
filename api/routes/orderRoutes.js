@@ -16,7 +16,7 @@ router.get('/', protect, admin, async (req, res) => {
 // Create new order
 router.post('/', async (req, res) => {
   try {
-    const { orderItems, shippingAddress, totalPrice, paymentMethod } = req.body;
+    const { orderItems, shippingAddress, totalPrice, deliveryFee, paymentMethod } = req.body;
     if (orderItems && orderItems.length === 0) {
       return res.status(400).json({ message: "Pas d'articles dans la commande" });
     }
@@ -24,6 +24,7 @@ router.post('/', async (req, res) => {
       orderItems,
       user: req.user ? req.user._id : null,
       shippingAddress,
+      deliveryFee,
       totalPrice,
       paymentMethod,
     });
@@ -35,7 +36,7 @@ router.post('/', async (req, res) => {
 });
 
 // Get user orders (Profile)
-router.get('/myorders', protect, async (req, res) => {
+router.get('/my-orders', protect, async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
     res.json(orders);
@@ -45,13 +46,13 @@ router.get('/myorders', protect, async (req, res) => {
 });
 
 // Get order by ID
-router.get('/:id', protect, async (req, res) => {
+router.get('/my-orders/:id', protect, async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).populate('user', 'firstName email');
+    const order = await Order.findById(req.params.id);
     if (order) {
       // Check if user is owner or admin
-      if (order.user._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
-          return res.status(401).json({ message: "Non autorisé" });
+      if (order.user && order.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+          return res.status(403).json({ message: "Accès refusé - cette commande ne vous appartient pas" });
       }
       res.json(order);
     } else {
@@ -67,9 +68,19 @@ router.put('/:id/status', protect, admin, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (order) {
+      const oldStatus = order.status;
       order.status = req.body.status || order.status;
+      
+      if (req.body.status && req.body.status !== oldStatus) {
+        order.statusHistory.push({
+          status: req.body.status,
+          date: new Date(),
+          note: req.body.note || `Statut mis à jour vers ${req.body.status}`
+        });
+      }
+
       if (req.body.status === 'delivered') {
-          order.isPaid = true; // For CoD, delivery usually means payment
+          order.isPaid = true;
       }
       const updatedOrder = await order.save();
       res.json(updatedOrder);

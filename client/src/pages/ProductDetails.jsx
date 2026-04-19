@@ -15,6 +15,7 @@ const ProductDetails = () => {
   const { addToCart } = useUIStore();
   const [qty, setQty] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const [activeTab, setActiveTab] = useState('Description');
 
   const { data: product, isLoading, error } = useQuery({
     queryKey: ['product', id],
@@ -57,7 +58,7 @@ const ProductDetails = () => {
       <div className="flex text-[11px] font-body uppercase tracking-[2px] text-[var(--gray)] mb-8 gap-2 items-center">
         <Link to="/" className="hover:text-[var(--dark)] transition-colors">Accueil</Link>
         <ChevronRight size={12} />
-        <Link to="/" className="hover:text-[var(--dark)] transition-colors">Catalogue</Link>
+        <Link to="/catalogue" className="hover:text-[var(--dark)] transition-colors">Catalogue</Link>
         <ChevronRight size={12} />
         <span className="text-[var(--dark)]">{product.name}</span>
       </div>
@@ -134,16 +135,22 @@ const ProductDetails = () => {
             <div className="flex items-center border border-[var(--border)] w-full sm:w-auto">
               <button 
                 onClick={() => setQty(Math.max(1, qty - 1))}
-                className="w-14 h-[50px] flex items-center justify-center text-[var(--dark)] hover:text-[#C2185B] transition-colors"
-                disabled={product.countInStock === 0}
+                className="w-14 h-[50px] flex items-center justify-center text-[var(--dark)] hover:text-[#C2185B] transition-colors disabled:opacity-30"
+                disabled={product.countInStock === 0 || qty <= 1}
               >
                 <Minus size={16} strokeWidth={1} />
               </button>
               <span className="w-12 text-center font-body text-[14px] font-medium">{qty}</span>
               <button 
-                onClick={() => setQty(qty + 1)}
-                className="w-14 h-[50px] flex items-center justify-center text-[var(--dark)] hover:text-[#C2185B] transition-colors"
-                disabled={product.countInStock === 0}
+                onClick={() => {
+                  if (qty < product.countInStock) {
+                    setQty(qty + 1);
+                  } else {
+                    toast.error("Stock maximum atteint");
+                  }
+                }}
+                className="w-14 h-[50px] flex items-center justify-center text-[var(--dark)] hover:text-[#C2185B] transition-colors disabled:opacity-30"
+                disabled={product.countInStock === 0 || qty >= product.countInStock}
               >
                 <Plus size={16} strokeWidth={1} />
               </button>
@@ -164,6 +171,53 @@ const ProductDetails = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Tabs */}
+      <section className="mb-20">
+        <div className="flex border-b border-[var(--border)] mb-8">
+          {['Description', 'Caractéristiques', 'Avis'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`pb-4 px-8 text-[12px] uppercase tracking-[2px] font-body font-semibold transition-all relative ${
+                activeTab === tab ? 'text-[#C2185B]' : 'text-[var(--gray)] hover:text-[var(--dark)]'
+              }`}
+            >
+              {tab}
+              {activeTab === tab && (
+                <motion.div layoutId="activeTab" className="absolute bottom-[-1px] left-0 right-0 h-[2px] bg-[#C2185B]" />
+              )}
+            </button>
+          ))}
+        </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="font-body text-[15px] leading-[1.8] text-[var(--gray)] max-w-3xl"
+          >
+            {activeTab === 'Description' && (
+              <p>{product.description}</p>
+            )}
+            {activeTab === 'Caractéristiques' && (
+              <ul className="space-y-4">
+                <li className="flex justify-between border-b pb-2"><span className="font-bold">Matière</span> <span>Coton Premium</span></li>
+                <li className="flex justify-between border-b pb-2"><span className="font-bold">Couleur</span> <span>Noir Intense</span></li>
+                <li className="flex justify-between border-b pb-2"><span className="font-bold">Origine</span> <span>Fabriqué au Maroc</span></li>
+              </ul>
+            )}
+            {activeTab === 'Avis' && (
+              <div className="text-center py-12 bg-[#F9F9F9]">
+                <p className="italic">"Une qualité exceptionnelle, comme toujours. LookMe ne déçoit jamais."</p>
+                <p className="mt-4 font-bold">— Sarah K.</p>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </section>
 
       {/* Similar Products */}
       {similarProducts?.length > 0 && (

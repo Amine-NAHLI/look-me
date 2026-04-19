@@ -1,13 +1,14 @@
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Search, ShoppingBag, User, Menu, X } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUIStore } from '../store/useUIStore';
 import { drawerVariants, overlayVariants } from '../utils/animations';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { cart, openCart, user, openAuthModal } = useUIStore();
   const { scrollY } = useScroll();
 
@@ -17,8 +18,8 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Accueil', path: '/' },
-    { name: 'Catalogue', path: '/' },
-    { name: 'Nouveautés', path: '/' },
+    { name: 'Catalogue', path: '/catalogue' },
+    { name: 'Nouveautés', path: '/nouveautes' },
   ];
 
   return (
@@ -47,24 +48,22 @@ export default function Navbar() {
 
           <div className="hidden lg:flex items-center justify-start gap-8">
             {navLinks.map((link) => (
-              <motion.a
-                key={link.name}
-                href={link.path}
-                className="font-body font-medium text-[12px] uppercase tracking-[2px] text-[#1C1C1C] transition-colors"
-                whileHover={{ color: '#C2185B' }}
-                transition={{ duration: 0.2 }}
-              >
-                {link.name}
-              </motion.a>
+              <motion.div key={link.name}>
+                <Link
+                  to={link.path}
+                  className="font-body font-medium text-[12px] uppercase tracking-[2px] text-[#1C1C1C] transition-colors hover:text-[#C2185B]"
+                >
+                  {link.name}
+                </Link>
+              </motion.div>
             ))}
             {user?.role === 'admin' && (
-              <motion.a 
-                href="/admin" 
-                className="font-body font-medium text-[12px] uppercase tracking-[2px] text-[#1C1C1C] transition-colors"
-                whileHover={{ color: '#C2185B' }}
+              <Link 
+                to="/admin" 
+                className="font-body font-medium text-[12px] uppercase tracking-[2px] text-[#1C1C1C] transition-colors hover:text-[#C2185B]"
               >
                 Admin
-              </motion.a>
+              </Link>
             )}
           </div>
 
@@ -76,6 +75,7 @@ export default function Navbar() {
 
           <div className="flex items-center justify-end gap-4 md:gap-5">
             <motion.button 
+              onClick={() => navigate('/catalogue')}
               className="text-[#1C1C1C] hidden sm:block"
               whileHover={{ scale: 1.1, color: '#C2185B' }}
               whileTap={{ scale: 0.95 }}
@@ -84,7 +84,7 @@ export default function Navbar() {
             </motion.button>
             
             <motion.button 
-              onClick={() => user ? window.location.href = '/profile' : openAuthModal()}
+              onClick={() => user ? navigate('/profil') : openAuthModal()}
               className="text-[#1C1C1C]"
               whileHover={{ scale: 1.1, color: '#C2185B' }}
               whileTap={{ scale: 0.95 }}
@@ -143,17 +143,20 @@ export default function Navbar() {
               </div>
               <div className="flex flex-col p-6 gap-6">
                 {navLinks.map((link, i) => (
-                  <motion.a
+                  <motion.div
                     key={link.name}
-                    href={link.path}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 + 0.2 }}
-                    onClick={() => setIsMenuOpen(false)}
-                    className="font-body font-medium text-[14px] uppercase tracking-[2px] text-[#1C1C1C]"
                   >
-                    {link.name}
-                  </motion.a>
+                    <Link
+                      to={link.path}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="font-body font-medium text-[14px] uppercase tracking-[2px] text-[#1C1C1C] block"
+                    >
+                      {link.name}
+                    </Link>
+                  </motion.div>
                 ))}
               </div>
             </motion.div>

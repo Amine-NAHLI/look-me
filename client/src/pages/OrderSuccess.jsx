@@ -1,9 +1,20 @@
 import { Link, useParams } from 'react-router-dom';
-import { CheckCircle, Package, Truck, ArrowRight, Home, CreditCard } from 'lucide-react';
+import { CheckCircle, Package, Truck, ArrowRight, Home, CreditCard, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 
 const OrderSuccess = () => {
   const { id } = useParams();
+
+  const { data: order, isLoading } = useQuery({
+    queryKey: ['order-success', id],
+    queryFn: async () => {
+      const { data } = await axios.get(`http://localhost:5000/api/orders/${id}`);
+      return data;
+    },
+    enabled: !!id
+  });
 
   return (
     <div className="container mx-auto px-4 py-24 text-center">
@@ -24,9 +35,13 @@ const OrderSuccess = () => {
         <h1 className="text-5xl font-black text-gray-900 mb-6 italic tracking-tighter">
           Prête pour la <span className="text-pink-500 not-italic">Livraison !</span>
         </h1>
-        <p className="text-xl text-gray-500 max-w-lg mx-auto leading-relaxed mb-4 font-medium">
-          Merci pour votre confiance. Votre commande <span className="font-black text-pink-500 select-all">#{id?.slice(-8).toUpperCase()}</span> est en cours de préparation.
-        </p>
+        {isLoading ? (
+          <div className="flex justify-center mb-4"><Loader2 className="animate-spin text-pink-500" /></div>
+        ) : (
+          <p className="text-xl text-gray-500 max-w-lg mx-auto leading-relaxed mb-4 font-medium">
+            Merci pour votre confiance. Votre commande <span className="font-black text-pink-500 select-all">#{order?.orderNumber || id?.slice(-8).toUpperCase()}</span> est en cours de préparation.
+          </p>
+        )}
       </motion.div>
 
       <motion.div
@@ -54,10 +69,10 @@ const OrderSuccess = () => {
 
       <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
         <Link 
-          to="/profile" 
+          to={`/profil/commandes/${id}`} 
           className="w-full sm:w-auto px-10 h-16 bg-gray-900 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl shadow-gray-200"
         >
-          Suivre ma commande
+          Voir ma commande <ArrowRight size={20} />
         </Link>
         <Link 
           to="/" 
