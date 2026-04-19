@@ -1,95 +1,98 @@
-import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ShoppingBag, ArrowRight, Star } from 'lucide-react';
 
 export default function Hero() {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { staggerChildren: 0.2, delayChildren: 0.3 }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
-  };
-
   return (
-    <section className="relative w-full min-h-[80vh] flex items-center mb-16 bg-white overflow-hidden">
-      {/* Forme douce rose pâle en arrière-plan */}
+    <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-white">
+      {/* Background Abstract Shapes */}
+      <div className="absolute top-0 right-0 w-1/2 h-full bg-slate-50 rounded-l-[10rem] -z-10 hidden lg:block" />
       <motion.div 
-        initial={{ opacity: 0, scale: 0.8, x: 200 }}
-        animate={{ opacity: 0.5, scale: 1, x: 0 }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
-        className="absolute top-0 right-0 w-full md:w-1/2 h-full bg-pink-50 rounded-l-full z-0"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 0.1 }}
+        transition={{ duration: 1.5 }}
+        className="absolute -top-20 -left-20 w-80 h-80 bg-pink-300 rounded-full blur-[100px] -z-10"
       />
-      
-      <div className="container mx-auto px-4 relative z-10 flex flex-col md:flex-row items-center">
-        {/* Texte animé */}
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="w-full md:w-1/2 py-12 md:py-24 pr-0 md:pr-8 text-center md:text-left"
-        >
-          <motion.span variants={itemVariants} className="text-pink-500 font-bold tracking-widest uppercase text-sm mb-4 block">
-            Nouvelle Collection Été
-          </motion.span>
-          <motion.h1 variants={itemVariants} className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-tight text-slate-800">
-            Douceur en <br/>
-            <span className="text-pink-500">
-              Rose & Blanc.
-            </span>
-          </motion.h1>
-          <motion.p variants={itemVariants} className="text-lg text-slate-500 mb-10 leading-relaxed font-medium max-w-lg mx-auto md:mx-0">
-            Découvrez notre sélection exclusive de vêtements. Une collection lumineuse et résolument féminine pour toutes les occasions.
-          </motion.p>
-          
-          <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-            <motion.a 
-              href="#catalogue"
-              whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(236, 72, 153, 0.3)" }}
-              whileTap={{ scale: 0.95 }}
-              className="group flex items-center justify-center gap-2 bg-pink-500 text-white px-8 py-4 rounded-full font-bold shadow-lg shadow-pink-200"
-            >
-              Shopper maintenant
-              <motion.div
-                animate={{ x: [0, 5, 0] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
+
+      <div className="container mx-auto px-4 py-20 lg:py-0">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <motion.div
+            initial={{ x: -100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          >
+            <div className="inline-flex items-center gap-2 px-6 py-2 bg-pink-50 text-pink-600 rounded-full text-xs font-black uppercase tracking-[0.2em] mb-8 shadow-sm">
+              <Star size={14} fill="currentColor" />
+              Nouvelle Collection 2024
+            </div>
+            
+            <h1 className="text-6xl md:text-8xl font-black text-gray-900 leading-[0.9] tracking-tighter mb-8 italic">
+              Visez <span className="text-pink-500 not-italic">l'Élégance</span> <br /> 
+              À Chaque <span className="underline decoration-pink-200 underline-offset-8">Instant</span>.
+            </h1>
+            
+            <p className="text-xl text-gray-500 max-w-lg leading-relaxed mb-12 font-medium">
+              Découvrez des pièces uniques conçues pour sublimer votre quotidien. La mode marocaine moderne s'invite chez vous.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <button 
+                onClick={() => document.getElementById('catalogue')?.scrollIntoView({ behavior: 'smooth' })}
+                className="btn-primary flex items-center gap-3 group px-10 h-16 text-lg"
               >
-                <ArrowRight size={18} />
-              </motion.div>
-            </motion.a>
-            <motion.a 
-              href="#catalogue"
-              whileHover={{ scale: 1.05, backgroundColor: "#fdf2f8" }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center gap-2 bg-white border-2 border-pink-500 text-pink-500 px-8 py-4 rounded-full font-bold"
-            >
-              Voir la galerie
-            </motion.a>
+                Explorer le Catalogue
+                <ArrowRight className="group-hover:translate-x-2 transition-transform" />
+              </button>
+              <div className="flex items-center gap-4">
+                <div className="flex -space-x-3">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-gray-100 overflow-hidden shadow-sm">
+                      <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="" />
+                    </div>
+                  ))}
+                </div>
+                <div className="text-sm">
+                  <p className="font-black text-gray-900 italic">+2k Clients</p>
+                  <div className="flex text-yellow-400">
+                    {[1,2,3,4,5].map(i => <Star key={i} size={12} fill="currentColor" />)}
+                  </div>
+                </div>
+              </div>
+            </div>
           </motion.div>
-        </motion.div>
-        
-        {/* Image 3D flottante */}
-        <motion.div 
-          initial={{ opacity: 0, opacity: 0 }}
-          animate={{ opacity: 1, opacity: 1 }}
-          transition={{ duration: 1, delay: 0.5 }}
-          className="w-full md:w-1/2 mt-12 md:mt-0 relative flex justify-center perspective-[1000px]"
-        >
-          <motion.div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[450px] md:h-[450px] bg-pink-300 rounded-full blur-3xl opacity-40 z-0" />
-          
-          <motion.img 
-            animate={{ y: [0, -20, 0] }}
-            transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-            whileHover={{ rotateY: 5, rotateX: 5, scale: 1.02, z: 50 }}
-            src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070&auto=format&fit=crop" 
-            alt="Mode féminine en rose et blanc" 
-            className="relative z-10 w-[90%] md:w-full max-w-md h-[400px] md:h-[550px] object-cover rounded-3xl shadow-2xl border-8 border-white transform-style-3d cursor-pointer"
-          />
-        </motion.div>
+
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="relative"
+          >
+            <div className="relative z-10 aspect-[4/5] rounded-[4rem] overflow-hidden shadow-2xl shadow-gray-200">
+              <img 
+                src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000&auto=format&fit=crop" 
+                alt="Fashion Model" 
+                className="w-full h-full object-cover"
+              />
+              {/* Floating Badge */}
+              <motion.div 
+                animate={{ y: [0, -20, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-12 -right-6 lg:-right-12 bg-white p-6 rounded-[2rem] shadow-2xl border border-gray-50 max-w-[180px]"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                    <ShoppingBag size={14} />
+                  </div>
+                  <span className="font-black text-[10px] uppercase tracking-widest text-gray-400">Dernier Achat</span>
+                </div>
+                <p className="font-bold text-gray-900 leading-tight">Robe Kimono Silk</p>
+                <p className="text-pink-500 font-black italic mt-1 text-lg">450 DH</p>
+              </motion.div>
+            </div>
+            
+            {/* Decorative background circle */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] border border-pink-100 rounded-full -scale-y-0 shadow-inner -z-0" />
+          </motion.div>
+        </div>
       </div>
     </section>
   );

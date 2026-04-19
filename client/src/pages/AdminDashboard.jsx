@@ -1,405 +1,262 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useUIStore } from '../store/useUIStore';
-import { Package, Tags, ShoppingBag, LogOut, PlusCircle, Trash2, Loader2, CheckCircle2 } from 'lucide-react';
+import { Package, Tags, ShoppingBag, LogOut, PlusCircle, Trash2, Loader2, CheckCircle2, TrendingUp, DollarSign, Users, AlertCircle, RefreshCw, ChevronDown } from 'lucide-react';
 import axios from 'axios';
 import { formatPrice } from '../utils/formatPrice';
+import toast from 'react-hot-toast';
 
 export default function AdminDashboard() {
   const { user, logout } = useUIStore();
-  const [activeTab, setActiveTab] = useState('categories');
+  const [activeTab, setActiveTab] = useState('stats');
+  const [loading, setLoading] = useState(false);
   
-  // States - Categories
+  // States
   const [categories, setCategories] = useState([]);
-  const [newCatName, setNewCatName] = useState('');
-  
-  // States - Products
   const [products, setProducts] = useState([]);
-  const [prodForm, setProdForm] = useState({
-    name: '', description: '', price: '', category: ''
-  });
+  const [orders, setOrders] = useState([]);
+  const [newCatName, setNewCatName] = useState('');
+  const [prodForm, setProdForm] = useState({ name: '', description: '', price: '', category: '' });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  
-  // Status for Orders
-  const [orders, setOrders] = useState([]);
-  const [updatingOrders, setUpdatingOrders] = useState({});
 
-  // UI States
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState({ text: '', type: '' });
+  // Stats
+  const revenue = orders.filter(o => o.status === 'delivered').reduce((acc, o) => acc + o.totalPrice, 0);
+  const pendingOrders = orders.filter(o => o.status === 'pending').length;
 
-  // Token config
-  const token = localStorage.getItem('lookme_token');
-  const config = { headers: { Authorization: `Bearer ${token}` } };
+  const config = {
+    headers: { Authorization: `Bearer ${localStorage.getItem('lookme_token')}` }
+  };
 
-  // Fetch Data on Load
   useEffect(() => {
-    fetchCategories();
-    fetchProducts();
-    fetchOrders();
+    if (user?.role !== 'admin') {
+      window.location.href = '/';
+      return;
+    }
+    fetchData();
   }, []);
 
-  const fetchCategories = async () => {
-    try {
-      const { data } = await axios.get('http://localhost:5000/api/categories');
-      setCategories(data);
-    } catch(e) { console.error(e); }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const { data } = await axios.get('http://localhost:5000/api/products');
-      setProducts(data);
-    } catch(e) { console.error(e); }
-  };
-
-  const fetchOrders = async () => {
-    try {
-      const { data } = await axios.get('http://localhost:5000/api/orders', config);
-      setOrders(data);
-    } catch(e) { console.error(e); }
-  };
-
-  const updateOrderStatus = async (orderId, status) => {
-    setUpdatingOrders(prev => ({ ...prev, [orderId]: true }));
-    try {
-      await axios.put(`http://localhost:5000/api/orders/${orderId}/status`, { status }, config);
-      setMsg({ text: 'Statut mis à jour', type: 'success' });
-      fetchOrders();
-    } catch(e) {
-      setMsg({ text: 'Erreur lors de la mise à jour', type: 'error' });
-    }
-    setUpdatingOrders(prev => ({ ...prev, [orderId]: false }));
-    setTimeout(() => setMsg({ text: '', type: '' }), 3000);
-  };
-
-  // Handlers - Category
-  const addCategory = async (e) => {
-    e.preventDefault();
-    if(!newCatName) return;
+  const fetchData = async () => {
     setLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/categories', { name: newCatName }, config);
-      setNewCatName('');
-      setMsg({ text: 'Catégorie ajoutée', type: 'success' });
-      fetchCategories();
-    } catch(err) {
-      setMsg({ text: err.response?.data?.message || 'Erreur', type: 'error' });
+      const [catRes, prodRes, orderRes] = await Promise.all([
+        axios.get('http://localhost:5000/api/categories'),
+        axios.get('http://localhost:5000/api/products'),
+        axios.get('http://localhost:5000/api/orders', config)
+      ]);
+      setCategories(catRes.data);
+      setProducts(prodRes.data);
+      setOrders(orderRes.data);
+    } catch (err) {
+      toast.error("Erreur de synchronisation des données");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    setTimeout(() => setMsg({ text: '', type: '' }), 3000);
   };
 
-  const deleteCategory = async (id) => {
-    if(!window.confirm("Supprimer cette catégorie ?")) return;
+  const updateOrderStatus = async (id, status) => {
     try {
-      await axios.delete(`http://localhost:5000/api/categories/${id}`, config);
-      fetchCategories();
-    } catch(e) { alert("Erreur réseau"); }
+      await axios.put(`http://localhost:5000/api/orders/${id}/status`, { status }, config);
+      toast.success("Statut mis à jour");
+      fetchData();
+    } catch (e) { toast.error("Échec de la mise à jour"); }
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Validation du format
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      setMsg({ text: 'Format invalide (JPG, PNG, WEBP uniquement)', type: 'error' });
-      e.target.value = '';
-      return;
-    }
-
-    // Validation de la taille (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setMsg({ text: 'Image trop lourde (max 5MB)', type: 'error' });
-      e.target.value = '';
-      return;
-    }
-
+    if (file.size > 5 * 1024 * 1024) return toast.error("Max 5MB");
     setImageFile(file);
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-    };
+    reader.onloadend = () => setImagePreview(reader.result);
     reader.readAsDataURL(file);
   };
 
-  // Handlers - Product
   const addProduct = async (e) => {
     e.preventDefault();
-    if (!imageFile) {
-      setMsg({ text: 'Veuillez choisir une image locale.', type: 'error' });
-      return;
-    }
-
-    setLoading(true);
+    if (!imageFile) return toast.error("Image requise");
+    const formData = new FormData();
+    Object.keys(prodForm).forEach(key => formData.append(key, prodForm[key]));
+    formData.append('image', imageFile);
+    
     try {
-      const formData = new FormData();
-      formData.append('name', prodForm.name);
-      formData.append('description', prodForm.description);
-      formData.append('price', prodForm.price);
-      formData.append('category', prodForm.category);
-      formData.append('image', imageFile);
-
       await axios.post('http://localhost:5000/api/products', formData, config);
-      
+      toast.success("Produit ajouté !");
       setProdForm({ name: '', description: '', price: '', category: '' });
       setImagePreview(null);
-      // Reset input file visually
-      if(document.getElementById('file-upload')) {
-        document.getElementById('file-upload').value = '';
-      }
-
-      setMsg({ text: 'Produit publié dans le catalogue !', type: 'success' });
-      fetchProducts();
-    } catch(err) {
-      setMsg({ text: err.response?.data?.message || 'Erreur ajout', type: 'error' });
-    }
-    setLoading(false);
-    setTimeout(() => setMsg({ text: '', type: '' }), 4000);
+      fetchData();
+    } catch (e) { toast.error("Erreur lors de l'ajout"); }
   };
-
-  const deleteProduct = async (id) => {
-    if(!window.confirm("Retirer ce produit du catalogue ?")) return;
-    try {
-      await axios.delete(`http://localhost:5000/api/products/${id}`, config);
-      fetchProducts();
-    } catch(e) { alert("Erreur réseau"); }
-  };
-
-  if (!user || user.role !== 'admin') {
-    return <div className="p-8 text-center text-red-500 font-bold">Accès refusé.</div>;
-  }
 
   return (
-    <div className="flex-grow bg-slate-50 flex flex-col md:flex-row">
-      {/* Sidebar Admin */}
-      <aside className="w-full md:w-64 bg-white border-r border-slate-200 p-6 flex flex-col min-h-[400px]">
-        <div className="mb-10">
-          <p className="text-xs text-pink-500 font-bold uppercase tracking-widest">Administration</p>
-          <h2 className="text-xl font-extrabold text-slate-800">{user.firstName}</h2>
+    <div className="min-h-screen bg-slate-50 pt-32 pb-20">
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+          <div>
+            <h1 className="text-4xl font-black italic tracking-tighter text-gray-900">
+              Admin<span className="text-pink-500 not-italic">Panel</span>
+            </h1>
+            <p className="text-gray-400 font-bold text-sm flex items-center gap-2 mt-2 uppercase tracking-widest">
+              <CheckCircle2 size={16} className="text-green-500" /> Connecté en tant que Super Admin
+            </p>
+          </div>
+          <button onClick={fetchData} className="p-4 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+            <RefreshCw size={24} className={loading ? 'animate-spin' : ''} />
+          </button>
         </div>
-        
-        <nav className="flex-grow space-y-2">
-          <button 
-            onClick={() => setActiveTab('categories')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${activeTab === 'categories' ? 'bg-pink-50 text-pink-600' : 'text-slate-600 hover:bg-slate-50'}`}
-          >
-            <Tags size={20} /> Rayons
-          </button>
-          
-          <button 
-            onClick={() => setActiveTab('products')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${activeTab === 'products' ? 'bg-pink-50 text-pink-600' : 'text-slate-600 hover:bg-slate-50'}`}
-          >
-            <Package size={20} /> Catalogue
-          </button>
-          
-          <button 
-            onClick={() => setActiveTab('orders')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${activeTab === 'orders' ? 'bg-pink-50 text-pink-600' : 'text-slate-600 hover:bg-slate-50'}`}
-          >
-            <ShoppingBag size={20} /> Ventes
-          </button>
-        </nav>
 
-        <button onClick={logout} className="mt-10 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-500 transition-colors">
-          <LogOut size={18} /> Déconnexion
-        </button>
-      </aside>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <StatCard icon={<TrendingUp />} label="Revenus (Livrés)" value={formatPrice(revenue)} color="pink" />
+          <StatCard icon={<ShoppingBag />} label="Commandes Totales" value={orders.length} color="blue" />
+          <StatCard icon={<AlertCircle />} label="En attente" value={pendingOrders} color="yellow" />
+          <StatCard icon={<Package />} label="Articles catalogue" value={products.length} color="green" />
+        </div>
 
-      {/* Main Content Area */}
-      <main className="flex-grow p-8">
-        {msg.text && (
-          <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className={`mb-6 p-4 rounded-xl flex items-center gap-2 font-bold ${msg.type === 'success' ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-            {msg.type === 'success' ? <CheckCircle2 /> : null} {msg.text}
-          </motion.div>
-        )}
+        {/* Navigation Tabs */}
+        <div className="flex gap-4 p-2 bg-white rounded-3xl shadow-sm border border-gray-100 mb-12 overflow-x-auto no-scrollbar">
+          {[
+            { id: 'stats', label: 'Bilan', icon: <TrendingUp size={18} /> },
+            { id: 'products', label: 'Produits', icon: <ShoppingBag size={18} /> },
+            { id: 'orders', label: 'Commandes', icon: <Package size={18} /> },
+            { id: 'categories', label: 'Rayons', icon: <Tags size={18} /> },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-pink-500 text-white shadow-lg shadow-pink-200' : 'text-gray-400 hover:text-gray-900'}`}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
 
-        {/* ===================== TAB: CATEGORIES ===================== */}
-        {activeTab === 'categories' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <h1 className="text-3xl font-extrabold text-slate-800 mb-6">Gestion des Rayons</h1>
-            
-            <form onSubmit={addCategory} className="flex gap-4 mb-10 max-w-lg">
-              <input 
-                type="text" 
-                placeholder="Ex: Nouveautés, Robes..." 
-                value={newCatName}
-                onChange={(e) => setNewCatName(e.target.value)}
-                className="flex-grow px-4 py-3 rounded-xl border border-slate-200 focus:border-pink-500 outline-none"
-                required
-              />
-              <button disabled={loading} className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-pink-200">
-                {loading ? <Loader2 className="animate-spin" /> : <PlusCircle />} Ajouter
-              </button>
-            </form>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {categories.map(cat => (
-                <div key={cat._id} className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex justify-between items-center group">
-                  <span className="font-bold text-slate-700">{cat.name}</span>
-                  <button onClick={() => deleteCategory(cat._id)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ))}
-              {categories.length === 0 && <p className="text-slate-500 col-span-4">Créez votre première catégorie (ex: Pantalons).</p>}
-            </div>
-          </motion.div>
-        )}
-
-        {/* ===================== TAB: PRODUCTS ===================== */}
-        {activeTab === 'products' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <h1 className="text-3xl font-extrabold text-slate-800 mb-6">Ajouter au Catalogue</h1>
-            
-            {categories.length === 0 ? (
-              <div className="bg-yellow-50 text-yellow-700 p-6 rounded-2xl border border-yellow-200 font-medium">
-                ⚠️ Vous devez créer au moins un Rayon (Catégorie) avant d'ajouter des produits.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <form onSubmit={addProduct} className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Nom du Vêtement</label>
-                    <input required type="text" value={prodForm.name} onChange={(e) => setProdForm({...prodForm, name: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border rounded-lg" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Description Courte</label>
-                    <textarea required value={prodForm.description} onChange={(e) => setProdForm({...prodForm, description: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border rounded-lg h-24" placeholder="Coton bio..."></textarea>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Prix (DH)</label>
-                      <input required type="number" value={prodForm.price} onChange={(e) => setProdForm({...prodForm, price: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border rounded-lg" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Rayon</label>
-                      <select required value={prodForm.category} onChange={(e) => setProdForm({...prodForm, category: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border rounded-lg" >
-                        <option value="">Choisir</option>
+        {/* Tab Content */}
+        <div className="min-h-[600px]">
+          <AnimatePresence mode="wait">
+            {activeTab === 'products' && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} key="prod">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                  {/* Add Product Form */}
+                  <form onSubmit={addProduct} className="bg-white p-10 rounded-[3rem] shadow-xl border border-gray-50 h-fit space-y-6">
+                    <h3 className="text-xl font-black italic mb-6">Ajouter une pièce</h3>
+                    <input required placeholder="Nom de l'article" className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-none focus:ring-2 focus:ring-pink-500 font-bold" value={prodForm.name} onChange={e => setProdForm({...prodForm, name: e.target.value})} />
+                    <textarea required placeholder="Description détaillée..." className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-none focus:ring-2 focus:ring-pink-500 font-bold h-32" value={prodForm.description} onChange={e => setProdForm({...prodForm, description: e.target.value})} />
+                    <div className="grid grid-cols-2 gap-4">
+                      <input required type="number" placeholder="Prix (DH)" className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-none focus:ring-2 focus:ring-pink-500 font-bold" value={prodForm.price} onChange={e => setProdForm({...prodForm, price: e.target.value})} />
+                      <select required className="w-full px-6 py-4 bg-gray-50 rounded-2xl border-none focus:ring-2 focus:ring-pink-500 font-bold" value={prodForm.category} onChange={e => setProdForm({...prodForm, category: e.target.value})}>
+                        <option value="">Rayon</option>
                         {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
                       </select>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Image du Produit</label>
-                    <div className="flex items-center gap-4">
-                      {imagePreview && (
-                        <div className="w-16 h-16 rounded-lg overflow-hidden border border-pink-200">
-                          <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                      <input 
-                        id="file-upload"
-                        required 
-                        type="file" 
-                        accept=".jpg,.jpeg,.png,.webp"
-                        onChange={handleImageChange} 
-                        className="flex-grow px-4 py-2 bg-slate-50 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-pink-50 file:text-pink-600 hover:file:bg-pink-100" 
-                      />
+                    {/* Image Upload */}
+                    <div className="relative group">
+                      <div className={`aspect-[4/3] rounded-3xl border-2 border-dashed border-gray-100 flex items-center justify-center overflow-hidden transition-all ${imagePreview ? 'border-pink-500' : 'hover:border-pink-200'}`}>
+                        {imagePreview ? <img src={imagePreview} className="w-full h-full object-cover" /> : <PlusCircle className="text-gray-200" size={48} />}
+                        <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleImageChange} />
+                      </div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-center mt-3 text-gray-400">Cliquez pour téléverser (JPG, PNG, WEBP)</p>
                     </div>
-                  </div>
-                  <button disabled={loading} className="w-full bg-slate-800 hover:bg-black text-white py-3 rounded-xl font-bold mt-4 shadow-lg shadow-slate-200">
-                    {loading ? 'Publication...' : 'Publier le Produit'}
-                  </button>
-                </form>
+                    <button className="w-full btn-primary h-14">Publier l'article</button>
+                  </form>
 
-                <div className="lg:col-span-2">
-                  <h3 className="font-extrabold text-slate-800 mb-4">Inventaire Actuel ({products.length})</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Products List */}
+                  <div className="lg:col-span-2 space-y-4">
                     {products.map(p => (
-                      <div key={p._id} className="bg-white rounded-xl border border-slate-100 overflow-hidden shadow-sm flex flex-col">
-                        <div className="h-32 bg-slate-100 overflow-hidden">
-                          <img src={p.image} className="w-full h-full object-cover" alt="img" />
+                      <div key={p._id} className="bg-white p-4 rounded-3xl shadow-md flex items-center gap-6 border border-gray-50 group">
+                        <img src={p.image} className="w-20 h-24 rounded-2xl object-cover" />
+                        <div className="flex-grow">
+                          <h4 className="font-bold text-gray-900">{p.name}</h4>
+                          <p className="text-xs font-bold text-pink-500 uppercase tracking-widest">{formatPrice(p.price)}</p>
                         </div>
-                        <div className="p-3 flex-grow">
-                          <h4 className="font-bold text-sm leading-tight text-slate-800">{p.name}</h4>
-                          <p className="text-xs font-medium text-pink-500 my-1">{p.category?.name || 'Inconnu'}</p>
-                          <p className="font-extrabold text-slate-600">{formatPrice(p.price)}</p>
+                        <div className="flex gap-2">
+                          <button className="p-3 bg-gray-50 text-gray-400 hover:text-pink-500 rounded-xl transition-all">Modifier</button>
+                          <button className="p-3 bg-rose-50 text-rose-500 rounded-xl transition-all"><Trash2 size={20} /></button>
                         </div>
-                        <button onClick={() => deleteProduct(p._id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white text-xs font-bold py-2 transition-colors">Supprimer</button>
                       </div>
                     ))}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
-          </motion.div>
-        )}
 
-        {/* TAB: ORDERS */}
-        {activeTab === 'orders' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <h1 className="text-3xl font-extrabold text-slate-800 mb-6">Gestion des Ventes</h1>
-            
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Commande</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Client</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Total</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Statut</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {orders.map(order => (
-                      <tr key={order._id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <p className="font-bold text-slate-800">#{order._id.slice(-8).toUpperCase()}</p>
-                          <p className="text-xs text-slate-500">{new Date(order.createdAt).toLocaleDateString()}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="font-medium text-slate-800">{order.user?.firstName}</p>
-                          <p className="text-xs text-slate-500 capitalize">{order.shippingAddress?.city}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="font-extrabold text-pink-600">{formatPrice(order.totalPrice)}</p>
-                          <p className="text-[10px] text-slate-400">CoD</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                            order.status === 'delivered' ? 'bg-green-100 text-green-600' :
-                            order.status === 'pending' ? 'bg-yellow-100 text-yellow-600' :
-                            order.status === 'cancelled' ? 'bg-red-100 text-red-600' :
-                            'bg-blue-100 text-blue-600'
-                          }`}>
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <select 
-                            disabled={updatingOrders[order._id]}
-                            value={order.status}
-                            onChange={(e) => updateOrderStatus(order._id, e.target.value)}
-                            className="text-xs font-bold bg-slate-100 border-none rounded-lg p-2 focus:ring-2 focus:ring-pink-500 outline-none cursor-pointer disabled:opacity-50"
-                          >
-                            <option value="pending">En attente</option>
-                            <option value="confirmed">Confirmée</option>
-                            <option value="shipped">Expédiée</option>
-                            <option value="delivered">Livrée</option>
-                            <option value="cancelled">Annulée</option>
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                    {orders.length === 0 && (
+            {activeTab === 'orders' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key="ord">
+                <div className="bg-white rounded-[3rem] shadow-xl overflow-hidden border border-gray-50">
+                  <table className="w-full text-left">
+                    <thead className="bg-gray-50 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
                       <tr>
-                        <td colSpan="5" className="px-6 py-12 text-center text-slate-400">Aucune commande enregistrée pour le moment.</td>
+                        <th className="px-8 py-6">Commande</th>
+                        <th className="px-8 py-6">Client</th>
+                        <th className="px-8 py-6">Total</th>
+                        <th className="px-8 py-6">Statut</th>
+                        <th className="px-8 py-6">Actions</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </main>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {orders.map(order => (
+                        <tr key={order._id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-8 py-6 font-black text-xs">#{order._id.slice(-6).toUpperCase()}</td>
+                          <td className="px-8 py-6">
+                            <p className="font-bold text-gray-900">{order.shippingAddress?.fullName}</p>
+                            <p className="text-[10px] text-gray-400 font-bold">{order.shippingAddress?.phone}</p>
+                          </td>
+                          <td className="px-8 py-6">
+                            <p className="font-black text-pink-500">{formatPrice(order.totalPrice)}</p>
+                          </td>
+                          <td className="px-8 py-6">
+                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${
+                              order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                              order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-pink-100 text-pink-700'
+                            }`}>
+                              {order.status}
+                            </span>
+                          </td>
+                          <td className="px-8 py-6">
+                            <select 
+                              onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                              value={order.status}
+                              className="bg-gray-50 border-none rounded-xl text-[10px] font-black uppercase px-4 py-2 focus:ring-2 focus:ring-pink-500"
+                            >
+                              <option value="pending">En attente</option>
+                              <option value="confirmed">Confirmée</option>
+                              <option value="shipped">Expédiée</option>
+                              <option value="delivered">Livrée</option>
+                              <option value="cancelled">Annulée</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ icon, label, value, color }) {
+  const colors = {
+    pink: "bg-pink-50 text-pink-500 shadow-pink-50",
+    blue: "bg-blue-50 text-blue-500 shadow-blue-50",
+    yellow: "bg-yellow-50 text-yellow-500 shadow-yellow-50",
+    green: "bg-emerald-50 text-emerald-500 shadow-emerald-50",
+  };
+  return (
+    <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-50 flex items-center gap-6 group hover:-translate-y-1 transition-transform">
+      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 ${colors[color]}`}>
+        {React.cloneElement(icon, { size: 28 })}
+      </div>
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">{label}</p>
+        <p className="text-2xl font-black text-gray-900 tracking-tighter italic">{value}</p>
+      </div>
     </div>
   );
 }

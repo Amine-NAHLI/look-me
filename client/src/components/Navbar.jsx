@@ -1,99 +1,130 @@
-import { Search, ShoppingBag, User, Menu } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Search, ShoppingBag, User, Menu, X, Rocket } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useUIStore } from '../store/useUIStore';
-import { Link } from 'react-router-dom';
 
 export default function Navbar() {
-  const { openAuthModal, user, cart, openCart } = useUIStore();
-  
-  // Compter le nombre total d'articles (somme des quantités)
-  const cartItemCount = cart.reduce((total, item) => total + item.qty, 0);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+  const { cart, openCart, user, openAuthModal } = useUIStore();
+
+  const cartItemsCount = cart.reduce((acc, item) => acc + item.qty, 0);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const navLinks = [
+    { name: 'Accueil', path: '/' },
+    { name: 'Catalogue', path: '/' }, // Linked to home sections or shop page
+    { name: 'Nouveautés', path: '/' },
+  ];
 
   return (
-    <motion.nav 
-      initial={{ y: -100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
-      className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-pink-500/10 shadow-sm"
-    >
-      <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-        {/* Mobile Menu */}
-        <button className="md:hidden p-2 text-slate-500 hover:text-pink-500 transition-colors">
-          <Menu size={24} />
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'glass py-3' : 'bg-transparent py-5'}`}>
+      <div className="container mx-auto px-4 flex items-center justify-between">
+        {/* Mobile Toggle */}
+        <button 
+          className="lg:hidden p-2 text-gray-700" 
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        >
+          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
 
         {/* Logo */}
-        <Link 
-          to="/" 
-          className="text-3xl font-extrabold tracking-tighter text-slate-800 hover:text-pink-500 transition-colors"
-        >
-          LOOK<span className="text-pink-500">ME</span>
+        <Link to="/" className="flex items-center gap-2 group">
+          <div className="w-10 h-10 bg-pink-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-pink-200 group-hover:rotate-12 transition-transform">
+            <Rocket size={20} fill="white" />
+          </div>
+          <span className="text-2xl font-black tracking-tighter text-gray-900 uppercase">
+            Look<span className="text-pink-500">Me</span>
+          </span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-8 text-sm font-bold text-slate-600">
-          <Link to="/" className="hover:text-pink-500 transition-colors">Accueil</Link>
-          <a href="/#catalogue" className="hover:text-pink-500 transition-colors">Catalogue</a>
-          
-          {user && (
-            <Link to="/profile" className="hover:text-pink-500 transition-colors flex items-center gap-1">
-              Mes commandes
+        {/* Desktop Links */}
+        <div className="hidden lg:flex items-center gap-8">
+          {navLinks.map((link) => (
+            <Link
+              key={link.name}
+              to={link.path}
+              className={`text-sm font-bold uppercase tracking-wider transition-colors hover:text-pink-500 ${
+                location.pathname === link.path ? 'text-pink-500' : 'text-gray-600'
+              }`}
+            >
+              {link.name}
             </Link>
-          )}
-
-          {user && user.role === 'admin' && (
-            <Link to="/admin" className="px-4 py-2 bg-pink-100 text-pink-600 rounded-lg hover:bg-pink-500 hover:text-white transition-all shadow-sm">
-              👑 Admin
+          ))}
+          {user?.role === 'admin' && (
+            <Link to="/admin" className="text-sm font-bold uppercase tracking-wider text-rose-600 hover:text-rose-700">
+              Admin
             </Link>
           )}
         </div>
 
-        {/* Icons */}
-        <div className="flex items-center space-x-1 sm:space-x-4">
-          <motion.button 
-            onClick={() => {
-              if (window.location.pathname !== '/') {
-                 window.location.href = '/';
-              } else {
-                 document.querySelector('input[placeholder*="Rechercher"]')?.focus();
-              }
-            }}
-            whileHover={{ scale: 1.1, backgroundColor: '#fdf2f8' }} 
-            className="p-2 text-slate-500 hover:text-pink-500 rounded-full transition-colors"
-          >
+        {/* Actions */}
+        <div className="flex items-center gap-2 sm:gap-4">
+          <button className="p-2 text-gray-500 hover:text-pink-500 transition-colors hidden sm:block">
             <Search size={22} />
-          </motion.button>
+          </button>
           
-          <motion.button 
+          <button 
             onClick={() => user ? window.location.href = '/profile' : openAuthModal()}
-            whileHover={{ scale: 1.1, backgroundColor: '#fdf2f8' }} 
-            className="p-2 text-slate-500 hover:text-pink-500 rounded-full transition-colors"
+            className={`p-2 transition-colors rounded-full ${user ? 'text-pink-500 bg-pink-50' : 'text-gray-500 hover:text-pink-500 hover:bg-pink-50'}`}
           >
-            <User size={22} className={user ? 'text-pink-500' : ''} />
-          </motion.button>
+            <User size={22} />
+          </button>
 
-          <motion.button 
+          <button 
             onClick={openCart}
-            whileHover={{ scale: 1.1, backgroundColor: '#fdf2f8' }} 
-            className="p-2 text-slate-500 hover:text-pink-500 rounded-full transition-colors relative"
+            className="p-2 text-gray-500 hover:text-pink-500 relative transition-colors group"
           >
             <ShoppingBag size={22} />
             <AnimatePresence>
-              {cartItemCount > 0 && (
-                <motion.span 
+              {cartItemsCount > 0 && (
+                <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   exit={{ scale: 0 }}
-                  transition={{ type: "spring" }}
-                  className="absolute top-0 right-0 w-4 h-4 flex items-center justify-center bg-pink-500 text-white text-[10px] font-bold border-2 border-white rounded-full"
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-pink-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm"
                 >
-                  {cartItemCount}
+                  {cartItemsCount}
                 </motion.span>
               )}
             </AnimatePresence>
-          </motion.button>
+          </button>
         </div>
       </div>
-    </motion.nav>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="lg:hidden bg-white border-t border-gray-100 overflow-hidden"
+          >
+            <div className="flex flex-col p-6 gap-4">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`text-lg font-bold ${
+                    location.pathname === link.path ? 'text-pink-500' : 'text-gray-800'
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
   );
 }

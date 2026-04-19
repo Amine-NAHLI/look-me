@@ -1,156 +1,135 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Loader2, Search, FilterX } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2, Search, FilterX, ShoppingBag, Plus } from 'lucide-react';
 import axios from 'axios';
 import { useUIStore } from '../store/useUIStore';
 import { Link } from 'react-router-dom';
 import { formatPrice } from '../utils/formatPrice';
+import Skeleton from './Skeleton';
+import toast from 'react-hot-toast';
 
 export default function ProductGrid() {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  
-  const addToCart = useUIStore((state) => state.addToCart);
-  const searchQuery = useUIStore((state) => state.searchQuery);
-  const selectedCategory = useUIStore((state) => state.selectedCategory);
+  const [isLoading, setIsLoading] = useState(true);
+  const { searchQuery, selectedCategory, addToCart } = useUIStore();
 
   useEffect(() => {
     const fetchProducts = async () => {
-      setLoading(true);
+      setIsLoading(true);
       try {
-        const { data } = await axios.get(`http://localhost:5000/api/products`, {
-            params: {
-              keyword: searchQuery,
-              category: selectedCategory
-            }
-        });
+        let url = 'http://localhost:5000/api/products';
+        const params = new URLSearchParams();
+        if (searchQuery) params.append('keyword', searchQuery);
+        if (selectedCategory) params.append('category', selectedCategory);
+        
+        if (params.toString()) url += `?${params.toString()}`;
+        
+        const { data } = await axios.get(url);
         setProducts(data);
-      } catch (err) {
-        setError('Impossible de charger la collection.');
+      } catch (error) {
+        console.error("Erreur chargement produits", error);
+        toast.error("Échec de la connexion au serveur");
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
     fetchProducts();
   }, [searchQuery, selectedCategory]);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { staggerChildren: 0.15 }
-    }
+  const handleAddToCart = (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(product);
+    toast.success("Ajouté au panier !");
   };
 
-  const cardVariants = {
-    hidden: { opacity: 0, y: 50 },
-    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 15 } }
-  };
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="h-64 flex flex-col items-center justify-center text-pink-500">
-        <Loader2 className="animate-spin mb-4" size={40} />
-        <p className="font-bold">Chargement de la collection...</p>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="space-y-4">
+            <Skeleton className="aspect-[3/4] rounded-3xl" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ))}
       </div>
     );
   }
 
-  if (error) {
+  if (products.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center text-red-500 font-bold">
-        {error}
+      <div className="py-20 flex flex-col items-center justify-center text-center">
+        <div className="p-6 bg-pink-50 text-pink-500 rounded-full mb-6">
+          <FilterX size={48} />
+        </div>
+        <h3 className="text-2xl font-bold text-gray-800 mb-2">Aucun résultat</h3>
+        <p className="text-gray-500">Essayez de modifier vos filtres ou votre recherche.</p>
       </div>
     );
   }
 
   return (
-    <section id="catalogue" className="container mx-auto px-4 py-16 overflow-hidden">
-      <motion.div 
-        initial={{ opacity: 0, x: -50 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-        className="flex items-end justify-between mb-12 border-b border-pink-100 pb-4"
-      >
-        <div>
-          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2 text-slate-800">Nos Favoris</h2>
-          <p className="text-slate-500 text-sm">Une sélection affichée en direct de notre base de données</p>
-        </div>
-      </motion.div>
-
-      {products.length === 0 ? (
-        <div className="text-center py-20 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col items-center justify-center">
-          <FilterX size={48} className="text-slate-300 mb-4" />
-          <h3 className="text-xl font-bold text-slate-800 mb-2">Aucun résultat trouvé</h3>
-          <p className="text-slate-500 font-medium mb-6">Essayez de modifier vos filtres ou votre recherche.</p>
-          {(searchQuery || selectedCategory) && (
-            <button 
-              onClick={() => {
-                useUIStore.getState().setSearchQuery('');
-                useUIStore.getState().setSelectedCategory('');
-              }}
-              className="px-6 py-2 bg-pink-500 text-white rounded-full font-bold shadow-lg hover:bg-pink-600 transition-all"
-            >
-              Réinitialiser les filtres
-            </button>
-          )}
-        </div>
-      ) : (
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 perspective-[1500px]"
-        >
-          {products.map((product) => (
-            <motion.div 
-              key={product._id} 
-              variants={cardVariants}
-              whileHover={{ 
-                scale: 1.05, 
-                rotateY: 2, 
-                rotateX: -2,
-                z: 20,
-                boxShadow: "0 25px 50px -12px rgba(236, 72, 153, 0.2)"
-              }}
-              className="group transform-style-3d bg-white rounded-2xl p-2 flex flex-col shadow-sm border border-slate-50"
-            >
-              <div className="relative aspect-[4/5] mb-4 overflow-hidden rounded-xl bg-pink-50 shadow-sm">
-                <Link to={`/product/${product._id}`}>
-                  <img 
-                    src={product.image} 
-                    alt={product.name}
-                    className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700 ease-out cursor-pointer"
-                    onError={(e) => {
-                      e.target.src = 'https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?q=80&w=2000&auto=format&fit=crop';
-                    }}
-                  />
-                </Link>
-                <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 bg-white/90 backdrop-blur-md transition-opacity duration-300 transform translate-y-4 group-hover:translate-y-0">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
+      <AnimatePresence>
+        {products.map((product, index) => (
+          <motion.div
+            layout
+            key={product._id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ delay: index * 0.05 }}
+            className="group"
+          >
+            <Link to={`/product/${product._id}`} className="block relative">
+              {/* Image Container */}
+              <div className="relative aspect-[3/4] rounded-[2rem] overflow-hidden bg-gray-100 shadow-xl shadow-gray-200/50 mb-6">
+                <img 
+                  src={product.image} 
+                  alt={product.name}
+                  className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-8">
                   <button 
-                    onClick={() => addToCart(product)}
-                    className="w-full bg-pink-500 text-white py-3 rounded-full text-sm font-bold shadow-md hover:bg-pink-600 transition-transform active:scale-95"
+                    onClick={(e) => handleAddToCart(e, product)}
+                    className="bg-white text-gray-900 px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 hover:bg-pink-500 hover:text-white"
                   >
-                    Ajouter au Panier
+                    <Plus size={18} />
+                    Panier
                   </button>
                 </div>
+
+                {/* Badges */}
+                <div className="absolute top-4 left-4 flex flex-col gap-2">
+                  <span className="px-3 py-1 bg-white/90 backdrop-blur-sm text-gray-900 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">
+                    Nouveau
+                  </span>
+                  {!product.countInStock || product.countInStock === 0 ? (
+                    <span className="px-3 py-1 bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
+                      Rupture
+                    </span>
+                  ) : null}
+                </div>
               </div>
-              <Link to={`/product/${product._id}`} className="text-center sm:text-left px-2 flex-grow flex flex-col justify-end">
-                <p className="text-xs text-pink-500 uppercase font-bold tracking-widest mb-1">
-                  {product.category?.name || 'Vêtements'}
+
+              {/* Info */}
+              <div className="px-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-pink-500 mb-2">
+                  {product.category?.name || 'Vêtement'}
                 </p>
-                <h3 className="text-lg font-bold text-slate-800 leading-tight group-hover:text-pink-500 transition-colors">
+                <h3 className="text-lg font-bold text-gray-900 leading-tight mb-2 group-hover:text-pink-500 transition-colors">
                   {product.name}
                 </h3>
-                <p className="text-lg font-extrabold text-slate-600 mt-2">{formatPrice(product.price)}</p>
-              </Link>
-            </motion.div>
-          ))}
-        </motion.div>
-      )}
-    </section>
+                <p className="text-xl font-black text-gray-900 italic">
+                  {formatPrice(product.price)}
+                </p>
+              </div>
+            </Link>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
   );
 }

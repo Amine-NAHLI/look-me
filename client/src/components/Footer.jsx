@@ -1,93 +1,88 @@
-import { useState } from 'react';
-import { Mail, Globe, MessageCircle, CheckCircle2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Facebook, Instagram, Twitter, Mail, Phone, MapPin, Rocket } from 'lucide-react';
 
-export default function Footer() {
-  const [email, setEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
-
-  const handleSubscribe = (e) => {
-    e.preventDefault();
-    if(email) {
-      setSubscribed(true);
-      setEmail('');
-      setTimeout(() => setSubscribed(false), 3000);
-    }
-  };
-
+const Footer = () => {
   return (
-    <footer className="border-t border-pink-100 mt-24 bg-white pt-16 pb-8">
+    <footer className="bg-gray-900 text-white pt-20 pb-10 mt-20">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-          <div className="col-span-1 md:col-span-1">
-            <a href="/" className="text-3xl font-extrabold tracking-tighter text-slate-800 mb-6 block">
-              LOOK<span className="text-pink-500">ME</span>
-            </a>
-            <p className="text-slate-500 text-sm leading-relaxed mb-6 font-medium">
-              Des collections pensées pour sublimer chaque femme au quotidien. L'élégance du rose et du blanc à fleur de peau.
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+          {/* Brand */}
+          <div className="space-y-6">
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-pink-500 rounded-xl flex items-center justify-center text-white">
+                <Rocket size={20} fill="white" />
+              </div>
+              <span className="text-2xl font-black tracking-tighter uppercase italic">
+                Look<span className="text-pink-500">Me</span>
+              </span>
+            </Link>
+            <p className="text-gray-400 leading-relaxed">
+              La destination préférée des femmes modernes au Maroc. Découvrez nos dernières collections de robes, tops et accessoires.
             </p>
-            <div className="flex space-x-4 text-pink-500">
-              <a href="#" className="p-2 bg-pink-50 rounded-full hover:bg-pink-500 hover:text-white transition-all"><Mail size={20} /></a>
-              <a href="#" className="p-2 bg-pink-50 rounded-full hover:bg-pink-500 hover:text-white transition-all"><MessageCircle size={20} /></a>
-              <a href="#" className="p-2 bg-pink-50 rounded-full hover:bg-pink-500 hover:text-white transition-all"><Globe size={20} /></a>
+            <div className="flex gap-4">
+              <a href="#" className="p-2 bg-gray-800 rounded-full hover:bg-pink-500 transition-colors">
+                <Facebook size={18} />
+              </a>
+              <a href="#" className="p-2 bg-gray-800 rounded-full hover:bg-pink-500 transition-colors">
+                <Instagram size={18} />
+              </a>
+              <a href="#" className="p-2 bg-gray-800 rounded-full hover:bg-pink-500 transition-colors">
+                <Twitter size={18} />
+              </a>
             </div>
           </div>
-          
+
+          {/* Quick Links */}
           <div>
-            <h4 className="font-bold text-slate-800 mb-6 uppercase tracking-wider text-sm">Boutique</h4>
-            <ul className="space-y-4 text-sm font-medium text-slate-500">
-              <li><a href="#" className="hover:text-pink-500 transition-colors">Nouveautés</a></li>
-              <li><a href="#" className="hover:text-pink-500 transition-colors">Robes d'Été</a></li>
-              <li><a href="#" className="hover:text-pink-500 transition-colors">Hauts & Basiques</a></li>
-              <li><a href="#" className="hover:text-pink-500 transition-colors">Bons Plans</a></li>
+            <h3 className="text-lg font-bold mb-8">Navigation</h3>
+            <ul className="space-y-4 text-gray-400">
+              <li><Link to="/" className="hover:text-pink-500 transition-colors">Accueil</Link></li>
+              <li><Link to="/" className="hover:text-pink-500 transition-colors">Catalogue complet</Link></li>
+              <li><Link to="/" className="hover:text-pink-500 transition-colors">Nouveautés</Link></li>
+              <li><Link to="/" className="hover:text-pink-500 transition-colors">Meilleures ventes</Link></li>
             </ul>
           </div>
 
+          {/* Support */}
           <div>
-            <h4 className="font-bold text-slate-800 mb-6 uppercase tracking-wider text-sm">Service Client</h4>
-            <ul className="space-y-4 text-sm font-medium text-slate-500">
-              <li><a href="#" className="hover:text-pink-500 transition-colors">Nous Contacter</a></li>
-              <li><a href="#" className="hover:text-pink-500 transition-colors">Questions Fréquentes</a></li>
-              <li><a href="#" className="hover:text-pink-500 transition-colors">Retours Simplifiés</a></li>
-              <li><a href="#" className="hover:text-pink-500 transition-colors">Où est mmon colis ?</a></li>
+            <h3 className="text-lg font-bold mb-8">Support & Légal</h3>
+            <ul className="space-y-4 text-gray-400">
+              <li><Link to="/" className="hover:text-pink-500 transition-colors">Suivi de commande</Link></li>
+              <li><Link to="/" className="hover:text-pink-500 transition-colors">Conditions Générales</Link></li>
+              <li><Link to="/" className="hover:text-pink-500 transition-colors">Politique de retour</Link></li>
+              <li><Link to="/" className="hover:text-pink-500 transition-colors">Contactez-nous</Link></li>
             </ul>
           </div>
 
+          {/* Contact info */}
           <div>
-            <h4 className="font-bold text-slate-800 mb-6 uppercase tracking-wider text-sm">Club Rose</h4>
-            <p className="text-sm text-slate-500 mb-4 font-medium">Inscrivez-vous pour gagner des points, des surprises exclusives et découvrir nos nouveautés.</p>
-            {subscribed ? (
-               <div className="flex items-center gap-2 text-pink-500 font-bold bg-pink-50 px-4 py-3 rounded-xl border border-pink-100">
-                  <CheckCircle2 size={20} />
-                  Merci pour votre inscription !
-               </div>
-            ) : (
-                <form onSubmit={handleSubscribe} className="flex border-2 border-pink-100 focus-within:border-pink-500 transition-colors rounded-full overflow-hidden">
-                  <input 
-                    type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Votre email" 
-                    className="bg-white px-6 py-3 w-full text-sm outline-none placeholder:text-slate-400 text-slate-700"
-                  />
-                  <button 
-                    type="submit"
-                    className="bg-pink-500 px-6 text-sm font-bold hover:bg-pink-600 text-white transition-colors"
-                  >
-                    Go!
-                  </button>
-                </form>
-            )}
+            <h3 className="text-lg font-bold mb-8">Contact</h3>
+            <ul className="space-y-6 text-gray-400">
+              <li className="flex items-start gap-3">
+                <MapPin className="text-pink-500 mt-1 flex-shrink-0" size={20} />
+                <span>Rabat, Maroc - Zone Industrielle Maarif</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <Phone className="text-pink-500 flex-shrink-0" size={20} />
+                <span>+212 6 00 00 00 00</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <Mail className="text-pink-500 flex-shrink-0" size={20} />
+                <span>contact@lookme.ma</span>
+              </li>
+            </ul>
           </div>
         </div>
-        
-        <div className="border-t border-pink-100 pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 font-medium">
-          <p>© {new Date().getFullYear()} LOOKME. La perfection en rose.</p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#" className="hover:text-pink-500 transition-colors">Confidentialité</a>
-            <a href="#" className="hover:text-pink-500 transition-colors">CGV</a>
+
+        <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500">
+          <p>© {new Date().getFullYear()} LOOKME Maroc. Tous droits réservés.</p>
+          <div className="flex gap-4">
+            <span>Paiement à la livraison sécurisé</span>
           </div>
         </div>
       </div>
     </footer>
   );
-}
+};
+
+export default Footer;

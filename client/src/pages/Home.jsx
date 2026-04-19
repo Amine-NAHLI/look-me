@@ -3,7 +3,7 @@ import axios from 'axios';
 import Hero from '../components/Hero'
 import ProductGrid from '../components/ProductGrid'
 import { useUIStore } from '../store/useUIStore';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Truck, CreditCard, ShieldCheck, Headphones } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Home() {
@@ -17,16 +17,23 @@ export default function Home() {
     }
   });
 
+  const reassuranceFeatures = [
+    { icon: <Truck size={32} />, title: "Livraison Rapide", desc: "Dans tout le Maroc" },
+    { icon: <CreditCard size={32} />, title: "Cash on Delivery", desc: "Payez à la réception" },
+    { icon: <ShieldCheck size={32} />, title: "Qualité Garantie", desc: "Produits sélectionnés" },
+    { icon: <Headphones size={32} />, title: "Support 7j/7", desc: "À votre écoute" },
+  ];
+
   return (
     <main className="flex-grow">
       <Hero />
       
       {/* Search and Filter Section */}
-      <section className="bg-white py-12 border-b border-gray-100">
+      <section className="bg-white py-12 border-b border-gray-100 sticky top-[72px] z-40 glass">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row gap-8 items-center justify-between">
+          <div className="flex flex-col lg:flex-row gap-8 items-center justify-between">
             {/* Search Bar */}
-            <div className="relative w-full md:w-1/3 group">
+            <div className="relative w-full lg:w-1/3 group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-colors" size={20} />
               <input 
                 type="text" 
@@ -46,16 +53,16 @@ export default function Home() {
             </div>
 
             {/* Categories */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto no-scrollbar">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 w-full lg:w-auto no-scrollbar">
               <button
                 onClick={() => setSelectedCategory('')}
                 className={`flex-shrink-0 px-6 py-3 rounded-xl font-bold transition-all ${
                   selectedCategory === '' 
-                  ? 'bg-pink-500 text-white shadow-lg shadow-pink-200' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-200' 
+                  : 'bg-white border border-gray-200 text-gray-600 hover:border-pink-500 hover:text-pink-500'
                 }`}
               >
-                Tout
+                Tout voir
               </button>
               {categories?.map((cat) => (
                 <button
@@ -63,8 +70,8 @@ export default function Home() {
                   onClick={() => setSelectedCategory(cat._id)}
                   className={`flex-shrink-0 px-6 py-3 rounded-xl font-bold transition-all ${
                     selectedCategory === cat._id 
-                    ? 'bg-pink-500 text-white shadow-lg shadow-pink-200' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-200' 
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-pink-500 hover:text-pink-500'
                   }`}
                 >
                   {cat.name}
@@ -72,25 +79,43 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="hidden md:flex items-center gap-2 text-gray-400 font-medium">
-              <SlidersHorizontal size={20} />
-              <span>Filtres</span>
+            <div className="hidden lg:flex items-center gap-2 text-gray-400 font-bold uppercase tracking-wider text-xs">
+              <SlidersHorizontal size={18} />
+              <span>Filtres avancés</span>
             </div>
           </div>
-          
-          {searchQuery && (
-            <motion.p 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-6 text-gray-500 font-medium"
-            >
-              Résultats pour "<span className="text-pink-500 font-bold">{searchQuery}</span>"
-            </motion.p>
-          )}
         </div>
       </section>
 
-      <ProductGrid />
+      {/* Main Grid Section */}
+      <section id="catalogue" className="py-20 bg-slate-50/50">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-12">
+            <div>
+              <h2 className="text-4xl font-black text-gray-900 tracking-tight">Catalogue</h2>
+              <div className="h-1.5 w-20 bg-pink-500 rounded-full mt-4"></div>
+            </div>
+          </div>
+          <ProductGrid />
+        </div>
+      </section>
+
+      {/* Reassurance Banner */}
+      <section className="bg-white py-24 border-y border-gray-100">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
+            {reassuranceFeatures.map((f, i) => (
+              <div key={i} className="flex flex-col items-center text-center group">
+                <div className="p-5 bg-pink-50 text-pink-500 rounded-2xl mb-6 group-hover:bg-pink-500 group-hover:text-white transition-all transform group-hover:-translate-y-2 duration-300 shadow-xl shadow-pink-50">
+                  {f.icon}
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{f.title}</h3>
+                <p className="text-gray-500 font-medium">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </main>
   )
 }

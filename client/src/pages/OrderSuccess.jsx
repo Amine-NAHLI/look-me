@@ -1,95 +1,85 @@
 import { Link, useParams } from 'react-router-dom';
-import { CheckCircle, Package, Truck, ArrowRight, Home } from 'lucide-react';
+import { CheckCircle, Package, Truck, ArrowRight, Home, CreditCard } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const OrderSuccess = () => {
   const { id } = useParams();
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-20 text-center">
+    <div className="container mx-auto px-4 py-24 text-center">
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
-        className="inline-flex items-center justify-center p-6 rounded-full bg-green-100 text-green-600 mb-8"
+        className="inline-flex items-center justify-center p-8 rounded-[3rem] bg-pink-500 text-white mb-10 shadow-2xl shadow-pink-200 rotate-12"
       >
-        <CheckCircle size={64} />
+        <CheckCircle size={64} strokeWidth={3} />
       </motion.div>
 
-      <motion.h1 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="text-4xl font-black text-gray-900 mb-4"
       >
-        Merci pour votre commande !
-      </motion.h1>
-
-      <motion.p 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="text-xl text-gray-600 mb-8"
-      >
-        Votre commande <span className="font-bold text-pink-600 text-lg">#{id?.slice(-8).toUpperCase()}</span> a été reçue avec succès.
-      </motion.p>
+        <h1 className="text-5xl font-black text-gray-900 mb-6 italic tracking-tighter">
+          Prête pour la <span className="text-pink-500 not-italic">Livraison !</span>
+        </h1>
+        <p className="text-xl text-gray-500 max-w-lg mx-auto leading-relaxed mb-4 font-medium">
+          Merci pour votre confiance. Votre commande <span className="font-black text-pink-500 select-all">#{id?.slice(-8).toUpperCase()}</span> est en cours de préparation.
+        </p>
+      </motion.div>
 
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 text-left mb-12"
+        className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 mt-20 mb-20"
       >
-        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-          <Truck className="text-pink-500" /> Informations importantes
-        </h2>
-        <div className="space-y-4">
-          <div className="flex gap-4 p-4 rounded-2xl bg-gray-50 border border-gray-100">
-            <div className="h-10 w-10 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center flex-shrink-0">
-              <span className="font-bold">1</span>
-            </div>
-            <div>
-              <p className="font-bold">Paiement à la livraison</p>
-              <p className="text-sm text-gray-500">Préparez le montant exact à remettre au livreur lors de la réception de votre colis.</p>
-            </div>
-          </div>
-          <div className="flex gap-4 p-4 rounded-2xl bg-gray-50 border border-gray-100">
-            <div className="h-10 w-10 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center flex-shrink-0">
-              <span className="font-bold">2</span>
-            </div>
-            <div>
-              <p className="font-bold">Confirmation par SMS</p>
-              <p className="text-sm text-gray-500">Un agent pourrait vous appeler pour confirmer votre adresse avant l'expédition.</p>
-            </div>
-          </div>
-          <div className="flex gap-4 p-4 rounded-2xl bg-gray-50 border border-gray-100">
-            <div className="h-10 w-10 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center flex-shrink-0">
-              <span className="font-bold">3</span>
-            </div>
-            <div>
-              <p className="font-bold">Suivi</p>
-              <p className="text-sm text-gray-500">Vous pouvez suivre l'état de votre commande dans votre profil.</p>
-            </div>
-          </div>
-        </div>
+        <SuccessCard 
+          icon={<CreditCard />} 
+          title="Mode de paiement" 
+          desc="Cash à la livraison" 
+        />
+        <SuccessCard 
+          icon={<Truck />} 
+          title="Estimation" 
+          desc="24h - 48h ouvrés" 
+        />
+        <SuccessCard 
+          icon={<Package />} 
+          title="Statut" 
+          desc="En préparation" 
+        />
       </motion.div>
 
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
         <Link 
           to="/profile" 
-          className="flex items-center justify-center gap-2 py-4 px-8 rounded-2xl bg-gray-900 text-white font-bold hover:bg-black transition-all"
+          className="w-full sm:w-auto px-10 h-16 bg-gray-900 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:bg-black transition-all shadow-xl shadow-gray-200"
         >
-          <Package size={20} /> Voir mes commandes
+          Suivre ma commande
         </Link>
         <Link 
           to="/" 
-          className="flex items-center justify-center gap-2 py-4 px-8 rounded-2xl bg-pink-500 text-white font-bold hover:bg-pink-600 transition-all shadow-lg shadow-pink-200"
+          className="text-pink-500 font-black uppercase tracking-widest text-sm hover:underline flex items-center gap-2"
         >
-          <Home size={20} /> Retour à l'accueil <ArrowRight size={20} />
+          <Home size={18} /> Retour à la boutique
         </Link>
       </div>
     </div>
   );
 };
+
+function SuccessCard({ icon, title, desc }) {
+  return (
+    <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-gray-50 text-center group hover:bg-pink-50 transition-colors">
+      <div className="w-12 h-12 bg-pink-100 text-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6 transition-transform group-hover:scale-110">
+        {icon}
+      </div>
+      <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">{title}</h3>
+      <p className="font-bold text-gray-900 italic">{desc}</p>
+    </div>
+  );
+}
 
 export default OrderSuccess;
