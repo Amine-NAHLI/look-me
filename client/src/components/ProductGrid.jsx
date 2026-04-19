@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useUIStore } from '../store/useUIStore';
 import { Link } from 'react-router-dom';
 import { formatPrice } from '../utils/formatPrice';
+import { getImageUrl } from '../utils/imageUrl';
 import Skeleton from './Skeleton';
 import toast from 'react-hot-toast';
 import { staggerContainer, scaleIn } from '../utils/animations';
@@ -79,7 +80,7 @@ export default function ProductGrid() {
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, margin: "-50px" }}
-      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12"
+      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 md:gap-x-6 gap-y-8 md:gap-y-12"
     >
       <AnimatePresence>
         {products.map((product) => (
@@ -96,7 +97,7 @@ export default function ProductGrid() {
               <div className="relative aspect-[4/5] bg-[#F5F5F5] overflow-hidden mb-3">
                 {product.image ? (
                   <motion.img 
-                    src={product.image} 
+                    src={getImageUrl(product.image)} 
                     alt={product.name}
                     className="w-full h-full object-cover"
                     whileHover={{ scale: 1.04 }}

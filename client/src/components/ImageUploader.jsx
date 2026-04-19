@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import axios from 'axios';
 import { UploadCloud, X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../utils/axiosConfig';
+import { getImageUrl } from '../utils/imageUrl';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
@@ -36,18 +37,16 @@ export default function ImageUploader({ onUploadComplete, initialImage = null })
     formData.append('image', file);
 
     try {
-      // Configuration pour un appel depuis API locale
       const config = {
         headers: { 
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${localStorage.getItem('lookme_token')}`
+          'Content-Type': 'multipart/form-data'
         },
         onUploadProgress: (e) => {
           setProgress(Math.round((e.loaded * 100) / e.total));
         }
       };
 
-      const res = await axios.post('http://localhost:5000/api/upload', formData, config);
+      const res = await api.post('/upload', formData, config);
       setImageUrl(res.data.imageUrl);
       onUploadComplete(res.data.imageUrl);
       toast.success("Image téléversée avec succès");
@@ -93,7 +92,7 @@ export default function ImageUploader({ onUploadComplete, initialImage = null })
     <div className="w-full">
       {imageUrl ? (
         <div className="relative aspect-[4/5] rounded-[var(--radius-sm)] border border-[var(--border)] bg-[#F5F5F5] overflow-hidden group">
-          <img src={`http://localhost:5000${imageUrl}`} alt="Preview" className="w-full h-full object-cover" />
+          <img src={getImageUrl(imageUrl)} alt="Preview" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <button
               type="button"

@@ -14,7 +14,7 @@ router.get('/', protect, admin, async (req, res) => {
 });
 
 // Create new order
-router.post('/', protect, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { orderItems, shippingAddress, totalPrice, paymentMethod } = req.body;
     if (orderItems && orderItems.length === 0) {
@@ -22,7 +22,7 @@ router.post('/', protect, async (req, res) => {
     }
     const order = new Order({
       orderItems,
-      user: req.user._id,
+      user: req.user ? req.user._id : null,
       shippingAddress,
       totalPrice,
       paymentMethod,

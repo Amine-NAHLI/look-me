@@ -5,6 +5,7 @@ import { useUIStore } from '../store/useUIStore';
 import { ShoppingBag, ChevronRight, Package, AlertCircle, Plus, Minus, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatPrice } from '../utils/formatPrice';
+import { getImageUrl } from '../utils/imageUrl';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
 import { slideInRight, fadeInUp, scaleIn } from '../utils/animations';
@@ -70,7 +71,7 @@ const ProductDetails = () => {
           >
             {product.image ? (
                <img 
-                 src={product.image} 
+                 src={getImageUrl(product.image)} 
                  alt={product.name} 
                  className="w-full h-full object-cover"
                />
@@ -92,7 +93,7 @@ const ProductDetails = () => {
                 onClick={() => setActiveImage(i)}
                 className={`aspect-[4/5] bg-[#F5F5F5] overflow-hidden border-2 transition-colors ${i === activeImage ? 'border-[#C2185B]' : 'border-transparent'}`}
               >
-                {product.image ? <img src={product.image} alt="" className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" /> : <div/>}
+                {product.image ? <img src={getImageUrl(product.image)} alt="" className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" /> : <div/>}
               </motion.button>
             ))}
           </div>
@@ -148,16 +149,18 @@ const ProductDetails = () => {
               </button>
             </div>
 
-            <motion.button 
-              onClick={handleAddToCart}
-              disabled={product.countInStock === 0}
-              whileHover={{ scale: 1.01, backgroundColor: '#880E4F' }}
-              whileTap={{ scale: 0.99 }}
-              className="bg-[#C2185B] text-white font-body font-medium text-[12px] uppercase tracking-[2px] h-[50px] w-full flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
-            >
-              Ajouter au panier
-              <ShoppingBag size={16} strokeWidth={1.5} />
-            </motion.button>
+            <div className="fixed sm:static bottom-0 left-0 right-0 p-4 sm:p-0 bg-white sm:bg-transparent border-t sm:border-none border-[var(--border)] z-50 sm:z-auto w-full sm:w-auto">
+              <motion.button 
+                onClick={handleAddToCart}
+                disabled={product.countInStock === 0}
+                whileHover={{ scale: 1.01, backgroundColor: '#880E4F' }}
+                whileTap={{ scale: 0.99 }}
+                className="bg-[#C2185B] text-white font-body font-medium text-[12px] uppercase tracking-[2px] h-[50px] w-full flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+              >
+                Ajouter au panier
+                <ShoppingBag size={16} strokeWidth={1.5} />
+              </motion.button>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -187,7 +190,7 @@ const ProductDetails = () => {
                         <motion.img 
                             whileHover={{ scale: 1.04 }} 
                             transition={{ duration: 0.4 }} 
-                            src={p.image} 
+                            src={getImageUrl(p.image)} 
                             alt={p.name} 
                             className="w-full h-full object-cover" 
                         />

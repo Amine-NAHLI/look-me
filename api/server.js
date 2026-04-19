@@ -19,7 +19,11 @@ app.use(express.json());
 
 // Rendre le dossier des images accessible publiquement
 const path = require('path');
-app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+}, express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));

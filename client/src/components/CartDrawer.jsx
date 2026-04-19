@@ -3,6 +3,7 @@ import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { useUIStore } from '../store/useUIStore';
 import { useNavigate } from 'react-router-dom';
 import { formatPrice } from '../utils/formatPrice';
+import { getImageUrl } from '../utils/imageUrl';
 import toast from 'react-hot-toast';
 import { drawerVariants, overlayVariants, fadeInUp } from '../utils/animations';
 
@@ -87,7 +88,7 @@ export default function CartDrawer() {
                       className="flex gap-4 group"
                     >
                       <div className="h-[120px] w-[90px] bg-[#F5F5F5] overflow-hidden flex-shrink-0">
-                        <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                        <img src={getImageUrl(item.image)} alt={item.name} className="h-full w-full object-cover" />
                       </div>
                       <div className="flex-grow min-w-0 flex flex-col justify-between py-1">
                         <div>
