@@ -25,71 +25,74 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'glass py-3' : 'bg-transparent py-5'}`}>
-      <div className="container mx-auto px-4 flex items-center justify-between">
-        {/* Mobile Toggle */}
-        <button 
-          className="lg:hidden p-2 text-gray-700" 
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white/95 backdrop-blur-md shadow-sm py-4' : 'bg-transparent py-6'}`}>
+      <div className="container mx-auto px-6 grid grid-cols-2 lg:grid-cols-3 items-center">
+        
+        {/* Mobile Toggle & Desktop Links (Left) */}
+        <div className="flex items-center order-1lg:order-none">
+          <button 
+            className="lg:hidden p-2 -ml-2 text-gray-900 hover:text-pink-500 transition-colors" 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? <X size={24} strokeWidth={1.5} /> : <Menu size={24} strokeWidth={1.5} />}
+          </button>
 
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-10 h-10 bg-pink-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-pink-200 group-hover:rotate-12 transition-transform">
-            <Rocket size={20} fill="white" />
+          <div className="hidden lg:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                to={link.path}
+                className={`relative group text-[13px] font-bold uppercase tracking-widest transition-colors ${
+                  location.pathname === link.path ? 'text-pink-500' : 'text-gray-900 hover:text-pink-500'
+                }`}
+              >
+                {link.name}
+                <span className={`absolute -bottom-1.5 left-0 h-[2px] bg-pink-500 transition-all duration-300 ${location.pathname === link.path ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
+              </Link>
+            ))}
+            {user?.role === 'admin' && (
+              <Link to="/admin" className="relative group text-[13px] font-bold uppercase tracking-widest text-gray-900 hover:text-pink-500 transition-colors">
+                Admin
+                <span className="absolute -bottom-1.5 left-0 h-[2px] bg-pink-500 transition-all duration-300 w-0 group-hover:w-full"></span>
+              </Link>
+            )}
           </div>
-          <span className="text-2xl font-black tracking-tighter text-gray-900 uppercase">
-            Look<span className="text-pink-500">Me</span>
-          </span>
-        </Link>
-
-        {/* Desktop Links */}
-        <div className="hidden lg:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.path}
-              className={`text-sm font-bold uppercase tracking-wider transition-colors hover:text-pink-500 ${
-                location.pathname === link.path ? 'text-pink-500' : 'text-gray-600'
-              }`}
-            >
-              {link.name}
-            </Link>
-          ))}
-          {user?.role === 'admin' && (
-            <Link to="/admin" className="text-sm font-bold uppercase tracking-wider text-rose-600 hover:text-rose-700">
-              Admin
-            </Link>
-          )}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 sm:gap-4">
-          <button className="p-2 text-gray-500 hover:text-pink-500 transition-colors hidden sm:block">
-            <Search size={22} />
+        {/* Center: Logo */}
+        <div className="flex justify-start lg:justify-center items-center ml-4 lg:ml-0 order-2 lg:order-none hidden sm:flex">
+          <Link to="/" className="flex items-center group">
+            <span className="text-2xl font-black tracking-widest text-[#1A1A2E] uppercase">
+              Look<span className="text-pink-500 group-hover:opacity-80 transition-opacity">Me</span>
+            </span>
+          </Link>
+        </div>
+
+        {/* Actions (Right) */}
+        <div className="flex items-center justify-end gap-5 order-3 lg:order-none col-span-2 lg:col-span-1 mt-4 sm:mt-0 sm:col-span-1">
+          <button className="text-[#1A1A2E] hover:text-pink-500 transition-colors hidden sm:block">
+            <Search size={20} strokeWidth={1.5} />
           </button>
           
           <button 
             onClick={() => user ? window.location.href = '/profile' : openAuthModal()}
-            className={`p-2 transition-colors rounded-full ${user ? 'text-pink-500 bg-pink-50' : 'text-gray-500 hover:text-pink-500 hover:bg-pink-50'}`}
+            className={`transition-colors ${user ? 'text-pink-500' : 'text-[#1A1A2E] hover:text-pink-500'}`}
           >
-            <User size={22} />
+            <User size={20} strokeWidth={1.5} />
           </button>
 
           <button 
             onClick={openCart}
-            className="p-2 text-gray-500 hover:text-pink-500 relative transition-colors group"
+            className="text-[#1A1A2E] hover:text-pink-500 relative transition-colors group"
           >
-            <ShoppingBag size={22} />
+            <ShoppingBag size={20} strokeWidth={1.5} />
             <AnimatePresence>
               {cartItemsCount > 0 && (
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   exit={{ scale: 0 }}
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-pink-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm"
+                  className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] bg-pink-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-sm"
                 >
                   {cartItemsCount}
                 </motion.span>
