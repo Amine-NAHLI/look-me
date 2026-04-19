@@ -1,0 +1,16 @@
+{
+  "name": "look-me-root",
+  "version": "1.0.0",
+  "description": "Root package for client and api",
+  "scripts": {
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "dev": "concurrently \"npm run server-dev\" \"npm run client\"",
+    "client": "npm run dev --prefix client",
+    "server": "npm start --prefix api",
+    "server-dev": "npm run dev --prefix api",
+    "install-all": "npm install && npm install --prefix client && npm install --prefix api"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

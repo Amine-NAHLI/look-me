@@ -1,9 +1,18 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
 import { useUIStore } from '../store/useUIStore';
+import { useNavigate } from 'react-router-dom';
+import { formatPrice } from '../utils/formatPrice';
 
 export default function CartDrawer() {
+  const navigate = useNavigate();
   const { isCartOpen, closeCart, cart, updateQuantity, removeFromCart, getCartTotal } = useUIStore();
+
+  const handleCheckout = () => {
+    if (cart.length === 0) return;
+    closeCart();
+    navigate('/checkout');
+  };
 
   return (
     <AnimatePresence>
@@ -111,7 +120,7 @@ export default function CartDrawer() {
                             <Plus size={14} />
                           </button>
                         </div>
-                        <p className="font-extrabold text-slate-800">{item.price}€</p>
+                        <p className="font-extrabold text-slate-800">{formatPrice(item.price)}</p>
                       </div>
                     </div>
                   </motion.div>
@@ -124,9 +133,12 @@ export default function CartDrawer() {
               <div className="p-6 border-t border-slate-100 bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
                 <div className="flex justify-between items-center mb-6">
                   <span className="text-slate-500 font-medium">Total Estimé</span>
-                  <span className="text-2xl font-extrabold text-slate-800">{getCartTotal()}€</span>
+                  <span className="text-2xl font-extrabold text-slate-800">{formatPrice(getCartTotal())}</span>
                 </div>
-                <button className="w-full bg-pink-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-pink-200 hover:bg-pink-600 transition-colors transform active:scale-95">
+                <button 
+                  onClick={handleCheckout}
+                  className="w-full bg-pink-500 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-pink-200 hover:bg-pink-600 transition-colors transform active:scale-95"
+                >
                   Valider la Commande
                 </button>
                 <p className="text-center text-xs text-slate-400 mt-4 font-medium">

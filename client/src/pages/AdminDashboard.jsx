@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useUIStore } from '../store/useUIStore';
 import { Package, Tags, ShoppingBag, LogOut, PlusCircle, Trash2, Loader2, CheckCircle2 } from 'lucide-react';
 import axios from 'axios';
+import { formatPrice } from '../utils/formatPrice';
 
 export default function AdminDashboard() {
   const { user, logout } = useUIStore();
@@ -18,7 +19,12 @@ export default function AdminDashboard() {
     name: '', description: '', price: '', category: ''
   });
   const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   
+  // Status for Orders
+  const [orders, setOrders] = useState([]);
+  const [updatingOrders, setUpdatingOrders] = useState({});
+
   // UI States
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ text: '', type: '' });
@@ -31,6 +37,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchCategories();
     fetchProducts();
+    fetchOrders();
   }, []);
 
   const fetchCategories = async () => {
@@ -45,6 +52,26 @@ export default function AdminDashboard() {
       const { data } = await axios.get('http://localhost:5000/api/products');
       setProducts(data);
     } catch(e) { console.error(e); }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      const { data } = await axios.get('http://localhost:5000/api/orders', config);
+      setOrders(data);
+    } catch(e) { console.error(e); }
+  };
+
+  const updateOrderStatus = async (orderId, status) => {
+    setUpdatingOrders(prev => ({ ...prev, [orderId]: true }));
+    try {
+      await axios.put(`http://localhost:5000/api/orders/${orderId}/status`, { status }, config);
+      setMsg({ text: 'Statut mis à jour', type: 'success' });
+      fetchOrders();
+    } catch(e) {
+      setMsg({ text: 'Erreur lors de la mise à jour', type: 'error' });
+    }
+    setUpdatingOrders(prev => ({ ...prev, [orderId]: false }));
+    setTimeout(() => setMsg({ text: '', type: '' }), 3000);
   };
 
   // Handlers - Category
@@ -72,6 +99,33 @@ export default function AdminDashboard() {
     } catch(e) { alert("Erreur réseau"); }
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validation du format
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setMsg({ text: 'Format invalide (JPG, PNG, WEBP uniquement)', type: 'error' });
+      e.target.value = '';
+      return;
+    }
+
+    // Validation de la taille (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setMsg({ text: 'Image trop lourde (max 5MB)', type: 'error' });
+      e.target.value = '';
+      return;
+    }
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Handlers - Product
   const addProduct = async (e) => {
     e.preventDefault();
@@ -92,7 +146,7 @@ export default function AdminDashboard() {
       await axios.post('http://localhost:5000/api/products', formData, config);
       
       setProdForm({ name: '', description: '', price: '', category: '' });
-      setImageFile(null);
+      setImagePreview(null);
       // Reset input file visually
       if(document.getElementById('file-upload')) {
         document.getElementById('file-upload').value = '';
@@ -219,7 +273,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Prix (€)</label>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Prix (DH)</label>
                       <input required type="number" value={prodForm.price} onChange={(e) => setProdForm({...prodForm, price: e.target.value})} className="w-full px-4 py-2 bg-slate-50 border rounded-lg" />
                     </div>
                     <div>
@@ -231,15 +285,22 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Image depuis votre ordinateur/téléphone</label>
-                    <input 
-                      id="file-upload"
-                      required 
-                      type="file" 
-                      accept="image/png, image/jpeg, image/jpg, image/webp"
-                      onChange={(e) => setImageFile(e.target.files[0])} 
-                      className="w-full px-4 py-2 bg-slate-50 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-pink-50 file:text-pink-600 hover:file:bg-pink-100" 
-                    />
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Image du Produit</label>
+                    <div className="flex items-center gap-4">
+                      {imagePreview && (
+                        <div className="w-16 h-16 rounded-lg overflow-hidden border border-pink-200">
+                          <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <input 
+                        id="file-upload"
+                        required 
+                        type="file" 
+                        accept=".jpg,.jpeg,.png,.webp"
+                        onChange={handleImageChange} 
+                        className="flex-grow px-4 py-2 bg-slate-50 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-pink-50 file:text-pink-600 hover:file:bg-pink-100" 
+                      />
+                    </div>
                   </div>
                   <button disabled={loading} className="w-full bg-slate-800 hover:bg-black text-white py-3 rounded-xl font-bold mt-4 shadow-lg shadow-slate-200">
                     {loading ? 'Publication...' : 'Publier le Produit'}
@@ -257,7 +318,7 @@ export default function AdminDashboard() {
                         <div className="p-3 flex-grow">
                           <h4 className="font-bold text-sm leading-tight text-slate-800">{p.name}</h4>
                           <p className="text-xs font-medium text-pink-500 my-1">{p.category?.name || 'Inconnu'}</p>
-                          <p className="font-extrabold text-slate-600">{p.price}€</p>
+                          <p className="font-extrabold text-slate-600">{formatPrice(p.price)}</p>
                         </div>
                         <button onClick={() => deleteProduct(p._id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white text-xs font-bold py-2 transition-colors">Supprimer</button>
                       </div>
@@ -271,7 +332,72 @@ export default function AdminDashboard() {
 
         {/* TAB: ORDERS */}
         {activeTab === 'orders' && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500">En attente de futures commandes...</div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <h1 className="text-3xl font-extrabold text-slate-800 mb-6">Gestion des Ventes</h1>
+            
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Commande</th>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Client</th>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Total</th>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Statut</th>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {orders.map(order => (
+                      <tr key={order._id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <p className="font-bold text-slate-800">#{order._id.slice(-8).toUpperCase()}</p>
+                          <p className="text-xs text-slate-500">{new Date(order.createdAt).toLocaleDateString()}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-medium text-slate-800">{order.user?.firstName}</p>
+                          <p className="text-xs text-slate-500 capitalize">{order.shippingAddress?.city}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-extrabold text-pink-600">{formatPrice(order.totalPrice)}</p>
+                          <p className="text-[10px] text-slate-400">CoD</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
+                            order.status === 'delivered' ? 'bg-green-100 text-green-600' :
+                            order.status === 'pending' ? 'bg-yellow-100 text-yellow-600' :
+                            order.status === 'cancelled' ? 'bg-red-100 text-red-600' :
+                            'bg-blue-100 text-blue-600'
+                          }`}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <select 
+                            disabled={updatingOrders[order._id]}
+                            value={order.status}
+                            onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                            className="text-xs font-bold bg-slate-100 border-none rounded-lg p-2 focus:ring-2 focus:ring-pink-500 outline-none cursor-pointer disabled:opacity-50"
+                          >
+                            <option value="pending">En attente</option>
+                            <option value="confirmed">Confirmée</option>
+                            <option value="shipped">Expédiée</option>
+                            <option value="delivered">Livrée</option>
+                            <option value="cancelled">Annulée</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                    {orders.length === 0 && (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-12 text-center text-slate-400">Aucune commande enregistrée pour le moment.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </motion.div>
         )}
       </main>
     </div>

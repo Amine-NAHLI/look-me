@@ -15,8 +15,16 @@ const orderSchema = new mongoose.Schema({
     address: { type: String, required: true },
     city: { type: String, required: true },
     postalCode: { type: String, required: true },
+    phone: { type: String, required: true },
   },
   totalPrice: { type: Number, required: true, default: 0.0 },
+  paymentMethod: { type: String, required: true, default: 'Cash on Delivery' },
+  status: { 
+    type: String, 
+    required: true, 
+    enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'],
+    default: 'pending' 
+  },
   isPaid: { type: Boolean, required: true, default: false },
 }, { timestamps: true });
 

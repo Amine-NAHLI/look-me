@@ -1,14 +1,37 @@
+const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
 const { protect, admin } = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
 
-// Get all products (Public)
+// Get all products (Public) with search and filters
 router.get('/', async (req, res) => {
   try {
-    // Populate remplace l'ID de la catégorie par son objet complet pour affichage
-    const products = await Product.find({}).populate('category', 'name');
+    const keyword = req.query.keyword ? {
+      name: {
+        $regex: req.query.keyword,
+        $options: 'i'
+      }
+    } : {};
+
+    const category = req.query.category ? { category: req.query.category } : {};
+
+    const products = await Product.find({ ...keyword, ...category }).populate('category', 'name');
     res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+// Get single product (Public)
+router.get('/:id', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id).populate('category', 'name');
+    if (product) {
+      res.json(product);
+    } else {
+      res.status(404).json({ message: "Produit non trouvé" });
+    }
   } catch (error) {
     res.status(500).json({ message: "Erreur serveur" });
   }
