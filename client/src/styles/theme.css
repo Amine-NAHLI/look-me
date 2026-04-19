@@ -1,22 +1,62 @@
 :root {
-  --color-primary: #C2185B;
-  --color-primary-dark: #880E4F;
-  --color-black: #0D0D0D;
-  --color-dark: #1C1C1C;
-  --color-gray: #6B6B6B;
-  --color-gray-light: #F5F5F5;
-  --color-border: #E0E0E0;
-  --color-white: #FFFFFF;
-
+  --primary: #C2185B;
+  --primary-dark: #880E4F;
+  --primary-light: #FCE4EC;
+  --black: #0A0A0A;
+  --dark: #1C1C1C;
+  --gray: #6B6B6B;
+  --gray-light: #F5F5F5;
+  --border: #E8E8E8;
+  --white: #FFFFFF;
+  --success: #2E7D32;
+  --error: #C62828;
+  --warning: #E65100;
   --font-heading: 'Playfair Display', serif;
   --font-body: 'Inter', sans-serif;
-
-  --radius: 4px;
-  --radius-md: 6px;
-
+  --radius-sm: 3px;
+  --radius: 5px;
+  --radius-md: 8px;
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
-  --shadow-hover: 0 6px 24px rgba(194,24,91,0.12);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+  --shadow-pink: 0 8px 32px rgba(194,24,91,0.18);
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-  --transition: all 0.2s ease;
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--dark);
+  background: var(--white);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Base Responsive Elements */
+button {
+  min-height: 48px;
+}
+@media (min-width: 768px) {
+  button {
+    min-height: auto;
+  }
+}
+
+input, textarea, select {
+  font-size: 16px; /* Prevents auto zoom on iOS */
 }

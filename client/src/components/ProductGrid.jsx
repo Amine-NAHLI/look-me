@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Search, FilterX, ShoppingBag, Plus } from 'lucide-react';
+import { FilterX } from 'lucide-react';
 import axios from 'axios';
 import { useUIStore } from '../store/useUIStore';
 import { Link } from 'react-router-dom';
 import { formatPrice } from '../utils/formatPrice';
 import Skeleton from './Skeleton';
 import toast from 'react-hot-toast';
+import { staggerContainer, scaleIn } from '../utils/animations';
 
 export default function ProductGrid() {
   const [products, setProducts] = useState([]);
@@ -45,13 +46,19 @@ export default function ProductGrid() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {[...Array(8)].map((_, i) => (
-          <div key={i} className="space-y-4">
-            <Skeleton className="aspect-[3/4] rounded-3xl" />
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
+          <motion.div 
+            key={i} 
+            className="space-y-3"
+            animate={{ opacity: [0.4, 0.8, 0.4] }}
+            transition={{ repeat: Infinity, duration: 1.5 }}
+          >
+            <div className="aspect-[4/5] bg-[#F0F0F0] rounded-[var(--radius)]" />
+            <div className="h-4 bg-[#F0F0F0] rounded-[var(--radius)] w-1/3" />
+            <div className="h-4 bg-[#F0F0F0] rounded-[var(--radius)] w-2/3" />
+            <div className="h-4 bg-[#F0F0F0] rounded-[var(--radius)] w-1/4" />
+          </motion.div>
         ))}
       </div>
     );
@@ -60,69 +67,81 @@ export default function ProductGrid() {
   if (products.length === 0) {
     return (
       <div className="py-20 flex flex-col items-center justify-center text-center">
-        <div className="p-6 bg-pink-50 text-pink-500 rounded-full mb-6">
-          <FilterX size={48} />
-        </div>
-        <h3 className="text-2xl font-bold text-gray-800 mb-2">Aucun résultat</h3>
-        <p className="text-gray-500">Essayez de modifier vos filtres ou votre recherche.</p>
+        <FilterX size={48} className="text-[#C2185B] mb-6 opacity-40" strokeWidth={1} />
+        <h3 className="font-heading italic text-[32px] text-gray-400 mb-2 font-normal">Aucun produit</h3>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12">
+    <motion.div 
+      variants={staggerContainer}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-50px" }}
+      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-12"
+    >
       <AnimatePresence>
-        {products.map((product, index) => (
+        {products.map((product) => (
           <motion.div
             layout
+            variants={scaleIn}
             key={product._id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ delay: index * 0.05 }}
-            className="group"
+            whileHover={{ y: -4 }}
+            transition={{ duration: 0.2 }}
+            className="group relative"
           >
-            <Link to={`/product/${product._id}`} className="block relative">
+            <Link to={`/product/${product._id}`} className="block">
               {/* Image Container */}
-              <div className="relative aspect-[3/4] rounded-[2rem] overflow-hidden bg-gray-100 shadow-xl shadow-gray-200/50 mb-6">
-                <img 
-                  src={product.image} 
-                  alt={product.name}
-                  className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-8">
-                  <button 
-                    onClick={(e) => handleAddToCart(e, product)}
-                    className="bg-white text-gray-900 px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 hover:bg-pink-500 hover:text-white"
-                  >
-                    <Plus size={18} />
-                    Panier
-                  </button>
-                </div>
+              <div className="relative aspect-[4/5] bg-[#F5F5F5] overflow-hidden mb-3">
+                {product.image ? (
+                  <motion.img 
+                    src={product.image} 
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                    whileHover={{ scale: 1.04 }}
+                    transition={{ duration: 0.4 }}
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="font-heading italic text-[32px] text-[#C2185B] opacity-40">
+                      {product.name?.substring(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Button slide-up */}
+                <motion.button 
+                  initial={{ y: '100%', opacity: 0 }}
+                  // Framer motion uses standard CSS hover for triggering parent group changes 
+                  // but we'll use CSS to handle the slide up consistently
+                  onClick={(e) => handleAddToCart(e, product)}
+                  className="absolute bottom-0 left-0 w-full h-[40px] bg-[#0A0A0A] text-white font-body font-semibold text-[11px] uppercase tracking-[2px] rounded-none opacity-0 translate-y-full group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 flex items-center justify-center z-10"
+                >
+                  Ajouter
+                </motion.button>
 
                 {/* Badges */}
-                <div className="absolute top-4 left-4 flex flex-col gap-2">
-                  <span className="px-3 py-1 bg-white/90 backdrop-blur-sm text-gray-900 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">
-                    Nouveau
-                  </span>
-                  {!product.countInStock || product.countInStock === 0 ? (
-                    <span className="px-3 py-1 bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">
-                      Rupture
-                    </span>
-                  ) : null}
-                </div>
+                <motion.span 
+                  initial={{ scale: 0 }} 
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', delay: 0.2 }}
+                  className="absolute top-0 left-0 px-2 py-1 bg-white border border-[var(--border)] text-[#1C1C1C] text-[10px] font-body font-medium uppercase tracking-wider"
+                >
+                  Nouveau
+                </motion.span>
               </div>
 
               {/* Info */}
-              <div className="px-1">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-pink-500 mb-2">
+              <div className="flex flex-col">
+                <p className="font-body font-normal text-[12px] uppercase text-[#6B6B6B] mb-1">
                   {product.category?.name || 'Vêtement'}
                 </p>
-                <h3 className="text-lg font-bold text-gray-900 leading-tight mb-2 group-hover:text-pink-500 transition-colors">
+                <h3 className="font-body font-medium text-[14px] text-[#1C1C1C] mb-1">
                   {product.name}
                 </h3>
-                <p className="text-xl font-black text-gray-900 italic">
+                <p className="font-body font-bold text-[16px] text-[#C2185B]">
                   {formatPrice(product.price)}
                 </p>
               </div>
@@ -130,6 +149,6 @@ export default function ProductGrid() {
           </motion.div>
         ))}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }

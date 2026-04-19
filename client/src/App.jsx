@@ -8,6 +8,8 @@ import Checkout from './pages/Checkout'
 import OrderSuccess from './pages/OrderSuccess'
 import Profile from './pages/Profile'
 import NotFound from './pages/NotFound'
+import PageTransition from './components/PageTransition'
+import { AnimatePresence } from 'framer-motion'
 import './index.css'
 
 // Création de l'instance QueryClient
@@ -18,15 +20,17 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/product/:id" element={<ProductDetails />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/order-success/:id" element={<OrderSuccess />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AnimatePresence mode="wait">
+            <Routes>
+              <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+              <Route path="/product/:id" element={<PageTransition><ProductDetails /></PageTransition>} />
+              <Route path="/checkout" element={<PageTransition><Checkout /></PageTransition>} />
+              <Route path="/order-success/:id" element={<PageTransition><OrderSuccess /></PageTransition>} />
+              <Route path="/profile" element={<PageTransition><Profile /></PageTransition>} />
+              <Route path="/admin" element={<PageTransition><AdminDashboard /></PageTransition>} />
+              <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+            </Routes>
+          </AnimatePresence>
         </Layout>
       </Router>
     </QueryClientProvider>

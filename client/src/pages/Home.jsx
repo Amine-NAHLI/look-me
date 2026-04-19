@@ -1,121 +1,116 @@
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
-import Hero from '../components/Hero'
-import ProductGrid from '../components/ProductGrid'
-import { useUIStore } from '../store/useUIStore';
-import { Search, SlidersHorizontal, X, Truck, CreditCard, ShieldCheck, Headphones } from 'lucide-react';
-import { motion } from 'framer-motion';
+import ProductGrid from '../components/ProductGrid';
+import { Truck, CreditCard, ShieldCheck, Headphones } from 'lucide-react';
+import { motion, useInView } from 'framer-motion';
+import { fadeInUp, fadeIn, staggerContainer } from '../utils/animations';
+import { useRef } from 'react';
 
 export default function Home() {
-  const { searchQuery, setSearchQuery, selectedCategory, setSelectedCategory } = useUIStore();
-
-  const { data: categories } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const { data } = await axios.get('http://localhost:5000/api/categories');
-      return data;
-    }
-  });
+  const reassuranceRef = useRef(null);
+  const isReassuranceInView = useInView(reassuranceRef, { once: true, margin: "-50px" });
 
   const reassuranceFeatures = [
-    { icon: <Truck size={32} />, title: "Livraison Rapide", desc: "Dans tout le Maroc" },
-    { icon: <CreditCard size={32} />, title: "Cash on Delivery", desc: "Payez à la réception" },
-    { icon: <ShieldCheck size={32} />, title: "Qualité Garantie", desc: "Produits sélectionnés" },
-    { icon: <Headphones size={32} />, title: "Support 7j/7", desc: "À votre écoute" },
+    { icon: <Truck size={24} strokeWidth={1} />, title: "Livraison Rapide" },
+    { icon: <CreditCard size={24} strokeWidth={1} />, title: "Paiement Livraison" },
+    { icon: <ShieldCheck size={24} strokeWidth={1} />, title: "Retours 30J" },
+    { icon: <Headphones size={24} strokeWidth={1} />, title: "Support 7J/7" },
   ];
 
   return (
     <main className="flex-grow">
-      <Hero />
-      
-      {/* Search and Filter Section */}
-      <section className="bg-white py-12 border-b border-gray-100 sticky top-[72px] z-40 glass">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col lg:flex-row gap-8 items-center justify-between">
-            {/* Search Bar */}
-            <div className="relative w-full lg:w-1/3 group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-pink-500 transition-colors" size={20} />
-              <input 
-                type="text" 
-                placeholder="Rechercher une pièce..." 
-                className="w-full pl-12 pr-10 py-4 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-pink-500 focus:bg-white transition-all shadow-sm font-medium"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-pink-500"
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
-
-            {/* Categories */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 w-full lg:w-auto no-scrollbar">
-              <button
-                onClick={() => setSelectedCategory('')}
-                className={`flex-shrink-0 px-6 py-3 rounded-xl font-bold transition-all ${
-                  selectedCategory === '' 
-                  ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-200' 
-                  : 'bg-white border border-gray-200 text-gray-600 hover:border-pink-500 hover:text-pink-500'
-                }`}
-              >
-                Tout voir
-              </button>
-              {categories?.map((cat) => (
-                <button
-                  key={cat._id}
-                  onClick={() => setSelectedCategory(cat._id)}
-                  className={`flex-shrink-0 px-6 py-3 rounded-xl font-bold transition-all ${
-                    selectedCategory === cat._id 
-                    ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-200' 
-                    : 'bg-white border border-gray-200 text-gray-600 hover:border-pink-500 hover:text-pink-500'
-                  }`}
-                >
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-
-            <div className="hidden lg:flex items-center gap-2 text-gray-400 font-bold uppercase tracking-wider text-xs">
-              <SlidersHorizontal size={18} />
-              <span>Filtres avancés</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Grid Section */}
-      <section id="catalogue" className="py-20 bg-slate-50/50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <h2 className="text-4xl font-black text-gray-900 tracking-tight">Catalogue</h2>
-              <div className="h-1.5 w-20 bg-pink-500 rounded-full mt-4"></div>
-            </div>
-          </div>
-          <ProductGrid />
+      {/* Hero Section */}
+      <section className="bg-[#0A0A0A] min-h-[100svh] flex items-center justify-center text-center px-4 md:px-6 lg:px-12 py-12">
+        <div className="flex flex-col items-center">
+          <motion.p
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.1, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+            className="font-body font-medium text-[12px] uppercase tracking-[3px] text-[#C2185B] mb-6"
+          >
+            — Nouvelle Collection 2024 —
+          </motion.p>
+          
+          <motion.h1
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.3, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+            className="font-heading font-bold text-[40px] md:text-[56px] lg:text-[80px] text-white leading-[1.1] mb-6"
+          >
+            L'Élégance<br/>À Votre Portée
+          </motion.h1>
+          
+          <motion.p
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.5, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+            className="font-body font-light text-[16px] text-[#9E9E9E] max-w-[480px] mb-10"
+          >
+            Découvrez notre sélection exclusive de pièces conçues pour sublimer chaque instant. L'alliance parfaite entre minimalisme et audace.
+          </motion.p>
+          
+          <motion.button
+            variants={fadeInUp}
+            initial="hidden"
+            animate="visible"
+            whileHover={{ scale: 1.02, backgroundColor: '#C2185B', color: '#fff' }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ delay: 0.7, duration: 0.3 }}
+            className="w-full md:w-auto bg-white text-black font-body font-semibold text-[12px] uppercase tracking-[2px] px-[48px] py-[16px] rounded-none transition-colors duration-300"
+          >
+            Explorer le Catalogue
+          </motion.button>
+          
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: 60 }}
+            transition={{ delay: 0.9, duration: 0.6 }}
+            className="h-[1px] bg-[#C2185B] mt-12"
+          />
         </div>
       </section>
 
       {/* Reassurance Banner */}
-      <section className="bg-white py-24 border-y border-gray-100">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
+      <motion.section 
+        ref={reassuranceRef}
+        initial="hidden"
+        animate={isReassuranceInView ? "visible" : "hidden"}
+        variants={fadeIn}
+        className="bg-[#F5F5F5] border-y border-[var(--border)] py-[20px]"
+      >
+        <div className="container mx-auto px-4 md:px-6 lg:px-12">
+          <div className="flex overflow-x-auto no-scrollbar md:grid md:grid-cols-4 gap-8 pb-4 md:pb-0">
             {reassuranceFeatures.map((f, i) => (
-              <div key={i} className="flex flex-col items-center text-center group">
-                <div className="p-5 bg-pink-50 text-pink-500 rounded-2xl mb-6 group-hover:bg-pink-500 group-hover:text-white transition-all transform group-hover:-translate-y-2 duration-300 shadow-xl shadow-pink-50">
+              <div key={i} className="flex flex-col items-center text-center gap-3 min-w-[140px] md:min-w-0 flex-shrink-0">
+                <div className="text-[#1C1C1C]">
                   {f.icon}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{f.title}</h3>
-                <p className="text-gray-500 font-medium">{f.desc}</p>
+                <h3 className="font-body font-medium text-[11px] uppercase tracking-[1.5px] text-[#1C1C1C]">{f.title}</h3>
               </div>
             ))}
           </div>
         </div>
+      </motion.section>
+
+      {/* Products Section */}
+      <section id="catalogue" className="py-12 md:py-16 lg:py-24 bg-white">
+        <div className="container mx-auto px-4 md:px-6 lg:px-12">
+          <div className="flex flex-col items-center mb-10 md:mb-16 text-center">
+            <span className="font-body font-medium text-[11px] uppercase tracking-[3px] text-[#C2185B] mb-4">
+              Catalogue
+            </span>
+            <h2 className="font-heading font-semibold text-[36px] text-black mb-6 tracking-wide">
+              Sélection du Moment
+            </h2>
+            <div className="h-[2px] w-[40px] bg-[#C2185B]" />
+          </div>
+          
+          <ProductGrid />
+        </div>
       </section>
     </main>
-  )
+  );
 }

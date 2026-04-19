@@ -1,28 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
-
+@import './styles/theme.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --primary: #fb7185; /* rose-400 */
-  --primary-dark: #e11d48; /* rose-600 */
-  --background: #ffffff;
-  --foreground: #0f172a; /* slate-900 */
-}
-
-@layer base {
-  body {
-    @apply font-sans bg-background text-foreground antialiased;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-  }
-}
-
 @layer components {
   .btn-primary {
-    @apply bg-pink-500 text-white px-8 py-3 rounded-md font-bold transition-all hover:bg-pink-600 hover:-translate-y-0.5 active:translate-y-0 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed;
+    @apply bg-[var(--primary)] text-white px-8 py-3 rounded-[var(--radius)] font-semibold transition-all hover:bg-[var(--primary-dark)] hover:-translate-y-0.5 active:translate-y-0 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed uppercase tracking-widest text-xs;
   }
   
   .glass {
