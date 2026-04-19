@@ -68,7 +68,9 @@ const Checkout = () => {
       navigate(`/order-success/${data._id}`);
       toast.success("Commande enregistrée !");
     } catch (error) {
-      toast.error("Erreur lors de la commande.");
+      console.error("Order error:", error);
+      const msg = error.response?.data?.message || error.message;
+      toast.error(`Erreur: ${msg}`);
     } finally {
       setLoading(false);
     }

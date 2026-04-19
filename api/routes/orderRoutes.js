@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
-const { protect, admin } = require('../middlewares/authMiddleware');
+const { protect, admin, optionalProtect } = require('../middlewares/authMiddleware');
 
 // Get all orders (Admin only)
 router.get('/', protect, admin, async (req, res) => {
@@ -14,24 +14,42 @@ router.get('/', protect, admin, async (req, res) => {
 });
 
 // Create new order
-router.post('/', async (req, res) => {
+router.post('/', optionalProtect, async (req, res) => {
   try {
-    const { orderItems, shippingAddress, totalPrice, deliveryFee, paymentMethod } = req.body;
+    const { 
+      orderItems, 
+      customerName, 
+      phone, 
+      address, 
+      city, 
+      subtotal,
+      deliveryFee, 
+      totalPrice, 
+      paymentMethod 
+    } = req.body;
+
     if (orderItems && orderItems.length === 0) {
       return res.status(400).json({ message: "Pas d'articles dans la commande" });
     }
+
     const order = new Order({
       orderItems,
       user: req.user ? req.user._id : null,
-      shippingAddress,
+      customerName,
+      phone,
+      address,
+      city,
+      subtotal,
       deliveryFee,
       totalPrice,
       paymentMethod,
     });
+
     const createdOrder = await order.save();
     res.status(201).json(createdOrder);
   } catch (error) {
-    res.status(500).json({ message: "Erreur de création de commande" });
+    console.error("Order creation error:", error);
+    res.status(500).json({ message: "Erreur de création de commande", error: error.message });
   }
 });
 

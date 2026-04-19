@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
-  orderNumber: { type: String, unique: true },
+  orderNumber: { type: String }, // Removed unique for now to test
   user: { type: mongoose.Schema.Types.ObjectId, required: false, ref: 'User' },
   customerName: { type: String, required: true },
   phone: { type: String, required: true },
@@ -39,17 +39,21 @@ const orderSchema = new mongoose.Schema({
 // Auto-generate order number
 orderSchema.pre('save', async function (next) {
   if (this.isNew) {
-    const Order = mongoose.model('Order');
-    const count = await Order.countDocuments();
-    const num = String(count + 1).padStart(3, '0');
-    this.orderNumber = `LM-${new Date().getFullYear()}-${num}`;
-    
-    // Initial status history
-    this.statusHistory = [{
-      status: 'pending',
-      date: new Date(),
-      note: 'Commande reçue'
-    }];
+    try {
+      const Order = this.constructor;
+      const count = await Order.countDocuments();
+      const num = String(count + 1).padStart(3, '0');
+      this.orderNumber = `LM-${new Date().getFullYear()}-${num}`;
+      
+      // Initial status history
+      this.statusHistory = [{
+        status: 'pending',
+        date: new Date(),
+        note: 'Commande reçue'
+      }];
+    } catch (err) {
+      return next(err);
+    }
   }
   next();
 });
