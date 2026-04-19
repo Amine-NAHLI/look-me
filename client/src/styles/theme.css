@@ -1,0 +1,22 @@
+:root {
+  --color-primary: #C2185B;
+  --color-primary-dark: #880E4F;
+  --color-black: #0D0D0D;
+  --color-dark: #1C1C1C;
+  --color-gray: #6B6B6B;
+  --color-gray-light: #F5F5F5;
+  --color-border: #E0E0E0;
+  --color-white: #FFFFFF;
+
+  --font-heading: 'Playfair Display', serif;
+  --font-body: 'Inter', sans-serif;
+
+  --radius: 4px;
+  --radius-md: 6px;
+
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-hover: 0 6px 24px rgba(194,24,91,0.12);
+
+  --transition: all 0.2s ease;
+}
