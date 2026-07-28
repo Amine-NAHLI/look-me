@@ -37,7 +37,7 @@ const orderSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Auto-generate order number
-orderSchema.pre('save', async function (next) {
+orderSchema.pre('save', async function () {
   if (this.isNew) {
     try {
       const Order = this.constructor;
@@ -52,10 +52,9 @@ orderSchema.pre('save', async function (next) {
         note: 'Commande reçue'
       }];
     } catch (err) {
-      return next(err);
+      throw err;
     }
   }
-  next();
 });
 
 module.exports = mongoose.model('Order', orderSchema);
