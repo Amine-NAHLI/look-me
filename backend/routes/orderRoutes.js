@@ -16,13 +16,13 @@ router.post('/', optionalProtect, validate(createOrderSchema), asyncHandler(asyn
 }));
 
 router.get('/', protect, admin, validate(pagination, 'query'), asyncHandler(async (req, res) => { 
-  const { page, limit } = req.query; 
+  const { page, limit } = req.validated.query; 
   const [items, total] = await Promise.all([
     prisma.order.findMany({
       include: { user: { select: { firstName: true, email: true } } },
       orderBy: { createdAt: 'desc' },
-      skip: (Number(page) - 1) * Number(limit),
-      take: Number(limit)
+      skip: (page - 1) * limit,
+      take: limit
     }),
     prisma.order.count()
   ]); 
@@ -30,14 +30,14 @@ router.get('/', protect, admin, validate(pagination, 'query'), asyncHandler(asyn
 }));
 
 router.get('/mine', protect, validate(pagination, 'query'), asyncHandler(async (req, res) => { 
-  const { page, limit } = req.query; 
+  const { page, limit } = req.validated.query; 
   const filter = { userId: req.user.id }; 
   const [items, total] = await Promise.all([
     prisma.order.findMany({
       where: filter,
       orderBy: { createdAt: 'desc' },
-      skip: (Number(page) - 1) * Number(limit),
-      take: Number(limit)
+      skip: (page - 1) * limit,
+      take: limit
     }), 
     prisma.order.count({ where: filter })
   ]); 

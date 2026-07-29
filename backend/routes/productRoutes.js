@@ -9,7 +9,7 @@ const { pagination, productSchema, idParams } = require('../validators/catalog')
 const router = express.Router();
 
 router.get('/', validate(pagination, 'query'), asyncHandler(async (req, res) => {
-  const { page, limit, sort, category, q } = req.query;
+  const { page, limit, sort, category, q } = req.validated.query;
   const filter = { 
     status: 'active', 
     ...(category ? { categoryId: category } : {}), 
@@ -22,8 +22,8 @@ router.get('/', validate(pagination, 'query'), asyncHandler(async (req, res) => 
       where: filter,
       include: { category: { select: { name: true, slug: true } }, variants: true },
       orderBy: sortMap[sort] || sortMap.newest,
-      skip: (Number(page) - 1) * Number(limit),
-      take: Number(limit)
+      skip: (page - 1) * limit,
+      take: limit
     }),
     prisma.product.count({ where: filter })
   ]);

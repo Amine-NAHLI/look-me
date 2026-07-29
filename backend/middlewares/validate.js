@@ -3,12 +3,12 @@ module.exports = (schema, source = 'body') => (req, _res, next) => {
   const result = schema.safeParse(req[source]);
   if (!result.success) return next(new AppError(result.error.issues[0].message, 400, 'VALIDATION_ERROR'));
   
-  // Dans Express 5, req.query est un getter et ne peut pas être réassigné avec `req.query = ...`
-  // Nous devons donc vider l'objet existant et lui assigner les nouvelles propriétés (avec coercition Zod)
-  for (const key of Object.keys(req[source])) {
-    delete req[source][key];
-  }
-  Object.assign(req[source], result.data);
+  // Express 5 rend req.query en lecture seule (getter/proxy).
+  // On stocke les données validées et coercées dans req.validated[source].
+  // Pour 'body', on remplace aussi req.body car il reste mutable.
+  if (!req.validated) req.validated = {};
+  req.validated[source] = result.data;
+  if (source === 'body') req.body = result.data;
   
   return next();
 };
