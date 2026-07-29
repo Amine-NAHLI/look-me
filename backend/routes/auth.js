@@ -13,4 +13,6 @@ router.post('/logout', asyncHandler(controller.logout));
 router.get('/me', protect, asyncHandler(controller.getUserProfile));
 router.put('/me', protect, validate(schemas.profileSchema), asyncHandler(controller.updateUserProfile));
 router.put('/me/password', protect, authLimiter, validate(schemas.changePasswordSchema), asyncHandler(controller.updateUserPassword));
+router.post('/forgot-password', authLimiter, validate(schemas.forgotPasswordSchema), asyncHandler(controller.forgotPassword));
+router.post('/reset-password', authLimiter, validate(schemas.resetPasswordSchema), asyncHandler(controller.resetPassword));
 module.exports = router;

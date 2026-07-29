@@ -1,24 +1,68 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
 const sharp = require('sharp');
 const rateLimit = require('express-rate-limit');
+const stream = require('stream');
+const cloudinary = require('cloudinary').v2;
 const { env } = require('../config/env');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../middlewares/asyncHandler');
 const { protect, admin } = require('../middlewares/authMiddleware');
 const router = express.Router();
-fs.mkdirSync(path.resolve(env.UPLOAD_DIRECTORY), { recursive: true });
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: env.MAX_UPLOAD_SIZE, files: 1, fields: 10, fieldSize: 10_000 }, fileFilter: (_req, file, cb) => cb(null, ['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) });
+
+if (env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary.config({
+    cloud_name: env.CLOUDINARY_CLOUD_NAME,
+    api_key: env.CLOUDINARY_API_KEY,
+    api_secret: env.CLOUDINARY_API_SECRET,
+  });
+}
+
+const upload = multer({ 
+  storage: multer.memoryStorage(), 
+  limits: { fileSize: env.MAX_UPLOAD_SIZE, files: 1, fields: 10, fieldSize: 10_000 }, 
+  fileFilter: (_req, file, cb) => cb(null, ['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) 
+});
+
 const uploadLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: 'draft-8', legacyHeaders: false });
+
+const uploadToCloudinary = (buffer, filename) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: 'look-me-products', format: 'webp', public_id: filename },
+      (error, result) => {
+        if (error) return reject(new AppError('Erreur Cloudinary', 500, 'UPLOAD_ERROR'));
+        resolve(result);
+      }
+    );
+    const readable = new stream.PassThrough();
+    readable.end(buffer);
+    readable.pipe(uploadStream);
+  });
+};
+
 router.post('/', protect, admin, uploadLimiter, upload.single('image'), asyncHandler(async (req, res) => {
   if (!req.file) throw new AppError('Image JPEG, PNG ou WebP requise', 400, 'INVALID_FILE');
-  let metadata; try { metadata = await sharp(req.file.buffer, { limitInputPixels: 25_000_000 }).metadata(); } catch { throw new AppError('Image invalide', 400, 'INVALID_FILE'); }
+  if (!env.CLOUDINARY_CLOUD_NAME) throw new AppError('Le stockage Cloudinary n\'est pas configuré', 500, 'CONFIG_ERROR');
+  
+  let metadata; 
+  try { 
+    metadata = await sharp(req.file.buffer, { limitInputPixels: 25_000_000 }).metadata(); 
+  } catch { 
+    throw new AppError('Image invalide', 400, 'INVALID_FILE'); 
+  }
+  
   if (!['jpeg', 'png', 'webp'].includes(metadata.format)) throw new AppError('Format d’image invalide', 400, 'INVALID_FILE');
-  const filename = `${crypto.randomUUID()}.webp`; const target = path.resolve(env.UPLOAD_DIRECTORY, filename);
-  await sharp(req.file.buffer, { limitInputPixels: 25_000_000 }).rotate().resize({ width: 1600, height: 2000, fit: 'inside', withoutEnlargement: true }).webp({ quality: 82 }).toFile(target);
-  res.status(201).json({ imageUrl: `/uploads/${filename}`, width: metadata.width, height: metadata.height });
+  
+  const processedBuffer = await sharp(req.file.buffer, { limitInputPixels: 25_000_000 })
+    .rotate()
+    .resize({ width: 1600, height: 2000, fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 82 })
+    .toBuffer();
+
+  const result = await uploadToCloudinary(processedBuffer, `product-${Date.now()}`);
+  
+  res.status(201).json({ imageUrl: result.secure_url, width: result.width, height: result.height });
 }));
+
 module.exports = router;

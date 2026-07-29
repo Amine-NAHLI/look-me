@@ -1,7 +1,7 @@
 const { createOrderSchema } = require('../../validators/order');
 
 const valid = {
-  items: [{ productId: '507f1f77bcf86cd799439011', quantity: 1 }],
+  items: [{ productId: 'b3f1f36a-02c5-4633-9499-3d71bc7f438a', quantity: 1 }],
   shippingAddress: { fullName: 'Sara El Amrani', phone: '+212600000000', addressLine1: '10 Rue Hassan II', city: 'Fès' },
   idempotencyKey: 'b3f1f36a-02c5-4633-9499-3d71bc7f438a',
 };

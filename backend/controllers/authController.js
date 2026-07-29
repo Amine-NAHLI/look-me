@@ -1,7 +1,9 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { prisma } = require('../config/db');
 const AppError = require('../utils/AppError');
 const { createSession, rotateSession, revokeSession, revokeUserSessions } = require('../services/authService');
+const { sendPasswordResetEmail } = require('../services/emailService');
 
 const cookieOptions = (expiresAt) => ({ httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', expires: expiresAt, path: '/api/auth', ...(process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {}) });
 const publicUser = (user) => ({ id: user.id, firstName: user.firstName, email: user.email, phone: user.phone, role: user.role });
@@ -77,4 +79,52 @@ exports.updateUserPassword = async (req, res) => {
   
   await revokeUserSessions(updatedUser.id); 
   return respondWithSession(res, updatedUser, req); 
+};
+
+exports.forgotPassword = async (req, res) => {
+  const user = await prisma.user.findUnique({ where: { email: req.body.email } });
+  if (!user || !user.isActive) {
+    // Return 200 even if user doesn't exist for security reasons
+    return res.status(200).json({ message: 'Si l\'email existe, un lien de réinitialisation a été envoyé.' });
+  }
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      resetPasswordToken: tokenHash,
+      resetPasswordExpires: new Date(Date.now() + 60 * 60 * 1000) // 1 heure
+    }
+  });
+
+  const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+  await sendPasswordResetEmail(user, resetUrl);
+
+  res.status(200).json({ message: 'Si l\'email existe, un lien de réinitialisation a été envoyé.' });
+};
+
+exports.resetPassword = async (req, res) => {
+  const tokenHash = crypto.createHash('sha256').update(req.body.token).digest('hex');
+
+  const user = await prisma.user.findUnique({ where: { resetPasswordToken: tokenHash } });
+  if (!user || !user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+    throw new AppError('Le lien de réinitialisation est invalide ou a expiré', 400, 'INVALID_TOKEN');
+  }
+
+  const hashedPassword = await bcrypt.hash(req.body.newPassword, 12);
+
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: { 
+      password: hashedPassword, 
+      passwordChangedAt: new Date(),
+      resetPasswordToken: null,
+      resetPasswordExpires: null
+    }
+  });
+
+  await revokeUserSessions(updatedUser.id);
+  return respondWithSession(res, updatedUser, req);
 };

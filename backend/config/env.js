@@ -22,6 +22,14 @@ const raw = z.object({
   COOKIE_DOMAIN: z.string().optional(),
   TRUST_PROXY: boolean.default(false),
   JSON_BODY_LIMIT: z.string().default('100kb'),
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().optional().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
 }).passthrough();
 
 const parsed = raw.safeParse(process.env);

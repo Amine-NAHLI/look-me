@@ -11,6 +11,11 @@ const { createApp } = require('../../app');
 describe('frontière HTTP', () => {
   const app = createApp();
 
+  afterAll(async () => {
+    const { disconnectDatabase } = require('../../config/db');
+    await disconnectDatabase();
+  });
+
   it('expose une sonde de santé sans fuite interne', async () => {
     const response = await request(app).get('/health');
     expect(response.status).toBe(200);
