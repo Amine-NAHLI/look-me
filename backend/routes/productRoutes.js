@@ -1,0 +1,97 @@
+const express = require('express');
+const { prisma } = require('../config/db');
+const AppError = require('../utils/AppError');
+const asyncHandler = require('../middlewares/asyncHandler');
+const validate = require('../middlewares/validate');
+const { protect, admin } = require('../middlewares/authMiddleware');
+const { pagination, productSchema, idParams } = require('../validators/catalog');
+
+const router = express.Router();
+
+router.get('/', validate(pagination, 'query'), asyncHandler(async (req, res) => {
+  const { page, limit, sort, category, q } = req.query;
+  const filter = { 
+    status: 'active', 
+    ...(category ? { categoryId: category } : {}), 
+    ...(q ? { name: { contains: q, mode: 'insensitive' } } : {}) 
+  };
+  const sortMap = { newest: { createdAt: 'desc' }, price_asc: { price: 'asc' }, price_desc: { price: 'desc' } };
+  
+  const [items, total] = await Promise.all([
+    prisma.product.findMany({
+      where: filter,
+      include: { category: { select: { name: true, slug: true } }, variants: true },
+      orderBy: sortMap[sort] || sortMap.newest,
+      skip: (page - 1) * limit,
+      take: limit
+    }),
+    prisma.product.count({ where: filter })
+  ]);
+  
+  res.json({ items, page, limit, total, totalPages: Math.ceil(total / limit) });
+}));
+
+router.get('/:id', validate(idParams, 'params'), asyncHandler(async (req, res) => { 
+  const product = await prisma.product.findFirst({ 
+    where: { id: req.params.id, status: 'active' }, 
+    include: { category: { select: { name: true, slug: true } }, variants: true } 
+  }); 
+  if (!product) throw new AppError('Produit introuvable', 404, 'PRODUCT_NOT_FOUND'); 
+  res.json({ product }); 
+}));
+
+router.post('/', protect, admin, validate(productSchema), asyncHandler(async (req, res) => { 
+  const category = await prisma.category.findFirst({ where: { id: req.body.category, status: 'active' } }); 
+  if (!category) throw new AppError('Catégorie introuvable', 400, 'INVALID_CATEGORY'); 
+  
+  const { category: categoryId, variants, ...productData } = req.body;
+  const product = await prisma.product.create({ 
+    data: { 
+      ...productData, 
+      categoryId,
+      variants: variants ? { create: variants } : undefined
+    },
+    include: { variants: true }
+  }); 
+  res.status(201).json({ product }); 
+}));
+
+router.put('/:id', protect, admin, validate(idParams, 'params'), validate(productSchema.partial()), asyncHandler(async (req, res) => { 
+  if (req.body.category) { 
+    const category = await prisma.category.findFirst({ where: { id: req.body.category, status: 'active' } }); 
+    if (!category) throw new AppError('Catégorie introuvable', 400, 'INVALID_CATEGORY'); 
+  } 
+  
+  const { category: categoryId, variants, ...productData } = req.body;
+  
+  try {
+    const product = await prisma.product.update({
+      where: { id: req.params.id },
+      data: { 
+        ...productData, 
+        ...(categoryId ? { categoryId } : {}),
+        variants: variants ? {
+          deleteMany: {},
+          create: variants
+        } : undefined
+      },
+      include: { variants: true }
+    }); 
+    res.json({ product });
+  } catch (error) {
+    if (error.code === 'P2025') throw new AppError('Produit introuvable', 404, 'PRODUCT_NOT_FOUND');
+    throw error;
+  }
+}));
+
+router.delete('/:id', protect, admin, validate(idParams, 'params'), asyncHandler(async (req, res) => { 
+  try {
+    await prisma.product.update({ where: { id: req.params.id }, data: { status: 'archived' } }); 
+    res.status(204).end(); 
+  } catch (error) {
+    if (error.code === 'P2025') throw new AppError('Produit introuvable', 404, 'PRODUCT_NOT_FOUND');
+    throw error;
+  }
+}));
+
+module.exports = router;

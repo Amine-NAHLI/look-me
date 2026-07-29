@@ -1,0 +1,16 @@
+const express = require('express');
+const controller = require('../controllers/authController');
+const validate = require('../middlewares/validate');
+const asyncHandler = require('../middlewares/asyncHandler');
+const { protect } = require('../middlewares/authMiddleware');
+const { authLimiter } = require('../middlewares/rateLimit');
+const schemas = require('../validators/auth');
+const router = express.Router();
+router.post('/register', authLimiter, validate(schemas.registerSchema), asyncHandler(controller.registerUser));
+router.post('/login', authLimiter, validate(schemas.loginSchema), asyncHandler(controller.loginUser));
+router.post('/refresh', authLimiter, validate(schemas.refreshSchema), asyncHandler(controller.refresh));
+router.post('/logout', asyncHandler(controller.logout));
+router.get('/me', protect, asyncHandler(controller.getUserProfile));
+router.put('/me', protect, validate(schemas.profileSchema), asyncHandler(controller.updateUserProfile));
+router.put('/me/password', protect, authLimiter, validate(schemas.changePasswordSchema), asyncHandler(controller.updateUserPassword));
+module.exports = router;
