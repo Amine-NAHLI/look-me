@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  firstName         String    @db.VarChar(80)
+  lastName          String?   @db.VarChar(80)
+  phone             String?   @db.VarChar(30)
+  email             String    @unique @db.VarChar(254)
+  password          String
+  role              Role      @default(user)
+  isActive          Boolean   @default(true)
+  passwordChangedAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  orders          Order[]
+  refreshSessions RefreshSession[]
+  auditLogs       AuditLog[]
+}
+
+enum Role {
+  user
+  admin
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique @db.VarChar(80)
+  slug      String    @unique
+  image     String?
+  status    Status    @default(active)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  products  Product[]
+}
+
+enum Status {
+  active
+  archived
+}
+
+model Product {
+  id             String    @id @default(uuid())
+  name           String    @db.VarChar(160)
+  slug           String    @unique
+  description    String    @db.VarChar(5000)
+  categoryId     String
+  category       Category  @relation(fields: [categoryId], references: [id])
+  price          Float
+  compareAtPrice Float?
+  currency       String    @default("MAD")
+  images         String[]
+  brand          String    @default("LOOKME") @db.VarChar(80)
+  sku            String?   @unique
+  stock          Int       @default(0)
+  status         Status    @default(active)
+  featured       Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  variants       ProductVariant[]
+  orderItems     OrderItem[]
+}
+
+model ProductVariant {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku       String?  @db.VarChar(80)
+  size      String?  @db.VarChar(40)
+  color     String?  @db.VarChar(40)
+  image     String?
+  stock     Int      @default(0)
+}
+
+model Order {
+  id                   String      @id @default(uuid())
+  orderNumber          String      @unique
+  userId               String?
+  user                 User?       @relation(fields: [userId], references: [id])
+  guestAccessTokenHash String?
+  currency             String      @default("MAD")
+  subtotal             Float
+  discountTotal        Float       @default(0)
+  deliveryFee          Float
+  taxTotal             Float       @default(0)
+  total                Float
+  
+  shippingFullName     String
+  shippingPhone        String
+  shippingAddressLine1 String
+  shippingCity         String
+  shippingPostalCode   String?
+  
+  billingFullName      String?
+  billingPhone         String?
+  billingAddressLine1  String?
+  billingCity          String?
+  billingPostalCode    String?
+
+  shippingMethod       String      @default("standard")
+  paymentMethod        String      @default("cash_on_delivery")
+  paymentStatus        PaymentStatus @default(pending)
+  status               OrderStatus @default(pending)
+
+  idempotencyKey       String      @unique
+  calculationVersion   Int         @default(1)
+  trackingNumber       String?
+  notes                String?     @db.VarChar(1000)
+
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  items                OrderItem[]
+  statusHistory        OrderStatusHistory[]
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  refunded
+  failed
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  shipped
+  delivered
+  cancelled
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  variantId String?
+  name      String
+  slug      String?
+  image     String?
+  sku       String?
+  size      String?
+  color     String?
+  unitPrice Float
+  discount  Float    @default(0)
+  quantity  Int
+  lineTotal Float
+  currency  String
+}
+
+model OrderStatusHistory {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    String
+  note      String?
+  changedById String?
+  changedAt DateTime @default(now())
+}
+
+model RefreshSession {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  userAgent  String?   @db.VarChar(512)
+  ip         String?   @db.VarChar(64)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model AuditLog {
+  id           String    @id @default(uuid())
+  actorId      String
+  actor        User      @relation(fields: [actorId], references: [id])
+  action       String    @db.VarChar(100)
+  resourceType String    @db.VarChar(60)
+  resourceId   String    @db.VarChar(80)
+  metadata     Json      @default("{}")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
