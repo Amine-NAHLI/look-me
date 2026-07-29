@@ -1,0 +1,4 @@
+const { z } = require('./common');
+const password = z.string().min(10, 'Le mot de passe doit contenir au moins 10 caractères').max(128).regex(/[A-Za-z]/, 'Le mot de passe doit contenir une lettre').regex(/\d/, 'Le mot de passe doit contenir un chiffre');
+const email = z.string().email().max(254).transform((value) => value.toLowerCase().trim());
+module.exports = { registerSchema: z.object({ firstName: z.string().trim().min(2).max(80), email, phone: z.string().trim().max(30).optional(), password }), loginSchema: z.object({ email, password: z.string().min(1).max(128) }), profileSchema: z.object({ firstName: z.string().trim().min(2).max(80), phone: z.string().trim().max(30).optional() }), changePasswordSchema: z.object({ currentPassword: z.string().min(1).max(128), newPassword: password }), refreshSchema: z.object({}).strict() };
