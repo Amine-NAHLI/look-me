@@ -22,8 +22,8 @@ router.get('/', validate(pagination, 'query'), asyncHandler(async (req, res) => 
       where: filter,
       include: { category: { select: { name: true, slug: true } }, variants: true },
       orderBy: sortMap[sort] || sortMap.newest,
-      skip: (page - 1) * limit,
-      take: limit
+      skip: (Number(page) - 1) * Number(limit),
+      take: Number(limit)
     }),
     prisma.product.count({ where: filter })
   ]);

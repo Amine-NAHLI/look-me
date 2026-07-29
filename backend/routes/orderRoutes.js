@@ -21,8 +21,8 @@ router.get('/', protect, admin, validate(pagination, 'query'), asyncHandler(asyn
     prisma.order.findMany({
       include: { user: { select: { firstName: true, email: true } } },
       orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit
+      skip: (Number(page) - 1) * Number(limit),
+      take: Number(limit)
     }),
     prisma.order.count()
   ]); 
@@ -36,8 +36,8 @@ router.get('/mine', protect, validate(pagination, 'query'), asyncHandler(async (
     prisma.order.findMany({
       where: filter,
       orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * limit,
-      take: limit
+      skip: (Number(page) - 1) * Number(limit),
+      take: Number(limit)
     }), 
     prisma.order.count({ where: filter })
   ]); 
