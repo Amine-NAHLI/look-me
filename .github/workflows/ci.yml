@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: 'backend/package-lock.json' }
+      - name: Install API
+        run: npm ci
+        working-directory: backend
+      - name: API syntax and tests
+        working-directory: backend
+        env:
+          NODE_ENV: test
+          MONGODB_URI: mongodb://127.0.0.1:27017/lookme_test
+          CLIENT_URL: http://localhost:5173
+          CORS_ALLOWED_ORIGINS: http://localhost:5173
+          JWT_ACCESS_SECRET: ci-access-secret-that-is-longer-than-thirty-two-characters
+          JWT_REFRESH_SECRET: ci-refresh-secret-that-is-longer-than-thirty-two-characters
+        run: |
+          npm run check
+          npm test
+      - name: Install frontend
+        run: npm ci
+        working-directory: frontend
+      - name: Frontend lint and build
+        working-directory: frontend
+        run: |
+          npm run lint
+          npm run build
+      - name: Dependency audit
+        run: |
+          npm audit --omit=dev --audit-level=high --prefix backend
+          npm audit --omit=dev --audit-level=high --prefix frontend
+      - uses: gitleaks/gitleaks-action@v2

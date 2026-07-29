@@ -1,0 +1,73 @@
+:root {
+  --primary: #9B0044;
+  --primary-dark: #720032;
+  --primary-light: #FFF4F8;
+  --black: #0A0A0A;
+  --dark: #1C1C1C;
+  --gray: #6B6B6B;
+  --gray-light: #F5F5F5;
+  --border: #E8E8E8;
+  --white: #FCF8F8;
+  --success: #2E7D32;
+  --error: #C62828;
+  --warning: #E65100;
+  --font-heading: 'Playfair Display', serif;
+  --font-body: 'Inter', sans-serif;
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --shadow-sm: 0 1px 3px rgba(28,27,27,0.06);
+  --shadow-md: 0 10px 30px rgba(28,27,27,0.08);
+  --shadow-lg: 0 18px 48px rgba(28,27,27,0.12);
+  --shadow-pink: 0 10px 30px rgba(155,0,68,0.18);
+  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--dark);
+  background: #fcf8f8;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Base Responsive Elements */
+button {
+  min-height: 48px;
+}
+@media (min-width: 768px) {
+  button {
+    min-height: auto;
+  }
+}
+
+input, textarea, select {
+  font-size: 16px; /* Prevents auto zoom on iOS */
+}
+
+:focus-visible {
+  outline: 3px solid #df0e84;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
