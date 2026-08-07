@@ -47,6 +47,7 @@ function createApp() {
   app.use('/api/products', require('./routes/productRoutes'));
   app.use('/api/orders', require('./routes/orderRoutes'));
   app.use('/api/uploads', require('./routes/uploadRoutes'));
+  app.use('/api/ai', require('./routes/aiRoutes'));
   app.use(notFound);
   app.use(errorHandler);
   return app;
