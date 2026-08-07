@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { UploadCloud, X, Loader2, Sparkles, RefreshCw, Check } from 'lucide-react';
+import { UploadCloud, X, Loader2, Sparkles, RefreshCw, Check, CheckCircle2, Circle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../utils/axiosConfig';
 
@@ -10,8 +10,8 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
   const [state, setState] = useState('EMPTY'); // EMPTY, SELECTED, PROCESSING, GENERATED, UPLOADING
   const [selectedFile, setSelectedFile] = useState(null);
   const [originalUrl, setOriginalUrl] = useState(null);
-  const [generatedBlobUrl, setGeneratedBlobUrl] = useState(null);
-  const [generatedBlob, setGeneratedBlob] = useState(null);
+  const [aiImages, setAiImages] = useState([]);
+  const [selections, setSelections] = useState({ original: false, ai0: false, ai1: false });
   const [preset, setPreset] = useState('studio');
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
@@ -19,9 +19,8 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
   useEffect(() => {
     return () => {
       if (originalUrl) URL.revokeObjectURL(originalUrl);
-      if (generatedBlobUrl) URL.revokeObjectURL(generatedBlobUrl);
     };
-  }, [originalUrl, generatedBlobUrl]);
+  }, [originalUrl]);
 
   const validateImage = (file) => {
     if (!ALLOWED_TYPES.includes(file.type)) throw new Error('Format non supporté. JPG, PNG ou WebP uniquement.');
@@ -57,16 +56,13 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
 
     try {
       const response = await api.post('/ai/process-image', formData, {
-        responseType: 'blob', // Important pour récupérer le fichier binaire directement en JS
-        timeout: 90000 // L'IA peut prendre du temps (jusqu'à 90s)
+        timeout: 120000 // Les 2 générations peuvent prendre du temps
       });
 
-      const blob = new Blob([response.data], { type: response.headers['content-type'] });
-      setGeneratedBlob(blob);
-      if (generatedBlobUrl) URL.revokeObjectURL(generatedBlobUrl);
-      setGeneratedBlobUrl(URL.createObjectURL(blob));
+      setAiImages(response.data.images);
+      setSelections({ original: false, ai0: true, ai1: false }); // Sélectionner la première IA par défaut
       setState('GENERATED');
-      toast.success('Image générée avec succès !');
+      toast.success('Images générées avec succès !');
     } catch (err) {
       console.error(err);
       toast.error('Erreur lors du traitement IA. Vérifiez vos identifiants Cloudflare.');
@@ -74,30 +70,49 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
     }
   };
 
-  const uploadFinalImage = async (fileOrBlob, filename = 'image.webp') => {
-    setState('UPLOADING');
-    const formData = new FormData();
-    // Si c'est un blob sans nom, on lui en donne un
-    const fileToUpload = fileOrBlob instanceof File ? fileOrBlob : new File([fileOrBlob], filename, { type: fileOrBlob.type });
-    formData.append('image', fileToUpload);
+  const base64ToFile = async (base64Str, filename) => {
+    const res = await fetch(base64Str);
+    const blob = await res.blob();
+    return new File([blob], filename, { type: blob.type });
+  };
 
+  const uploadSelectedImages = async () => {
+    const hasSelection = selections.original || selections.ai0 || selections.ai1;
+    if (!hasSelection) return toast.error('Veuillez sélectionner au moins une image.');
+
+    setState('UPLOADING');
+    
     try {
-      const res = await api.post('/uploads', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-      onUploadComplete(res.data.imageUrl);
-      toast.success('Image ajoutée au produit !');
-      // On peut réinitialiser ou laisser le composant parent gérer la fermeture
-      if (onCancel) onCancel(); 
+      const filesToUpload = [];
+      if (selections.original) filesToUpload.push(selectedFile);
+      if (selections.ai0 && aiImages[0]) filesToUpload.push(await base64ToFile(aiImages[0], 'ai-1.webp'));
+      if (selections.ai1 && aiImages[1]) filesToUpload.push(await base64ToFile(aiImages[1], 'ai-2.webp'));
+
+      // Uploader toutes les images sélectionnées une par une
+      for (const file of filesToUpload) {
+        const formData = new FormData();
+        formData.append('image', file);
+        const res = await api.post('/uploads', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+        onUploadComplete(res.data.imageUrl); // Ajouter l'image au produit
+      }
+
+      toast.success(`${filesToUpload.length} image(s) ajoutée(s) au produit !`);
+      if (onCancel) onCancel();
       else setState('EMPTY');
+
     } catch (err) {
       console.error(err);
       toast.error('Erreur lors de l\'enregistrement final');
-      setState('GENERATED'); // Revenir à l'état généré pour réessayer
+      setState('GENERATED'); 
     }
   };
 
+  const toggleSelection = (key) => setSelections(p => ({ ...p, [key]: !p[key] }));
+  
+  const getSelectedCount = () => [selections.original, selections.ai0, selections.ai1].filter(Boolean).length;
+
   return (
     <div className="w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-5 shadow-sm mt-4 relative overflow-hidden">
-      {/* Background gradient subtle */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#FFF8FB] to-transparent opacity-50 pointer-events-none" />
       
       <div className="mb-4 flex items-center justify-between relative z-10">
@@ -128,7 +143,7 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
             Glissez une photo brute ou cliquez pour parcourir
           </p>
           <p className="mt-2 text-[11px] uppercase tracking-wide text-[var(--gray)] font-semibold">
-            Votre photo ne sera pas sauvegardée avant validation
+            Nous générerons 2 propositions IA !
           </p>
           <input type="file" ref={fileInputRef} onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])} className="hidden" accept="image/jpeg, image/png, image/webp" />
         </div>
@@ -154,7 +169,7 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
                   Changer
                 </button>
                 <button type="button" onClick={processImage} className="flex flex-1 items-center justify-center gap-2 rounded bg-black px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-800">
-                  <Sparkles size={16} /> Générer le rendu
+                  <Sparkles size={16} /> Générer 2 propositions
                 </button>
               </div>
             </div>
@@ -166,36 +181,70 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
         <div className="flex min-h-[200px] flex-col items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] bg-[#F9F9F9] relative z-10">
           <Loader2 className="mb-4 animate-spin text-[#C2185B]" size={32} />
           <p className="font-heading text-lg text-[var(--dark)]">La magie opère...</p>
-          <p className="text-sm text-[var(--gray)] mt-1">Génération du rendu avec Cloudflare IA</p>
+          <p className="text-sm text-[var(--gray)] mt-1">Génération de 2 rendus en cours...</p>
         </div>
       )}
 
       {state === 'GENERATED' && (
         <div className="space-y-4 relative z-10">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wider text-[var(--gray)]">Originale</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Originale */}
+            <div 
+              className={`cursor-pointer rounded border-2 transition-all p-1 ${selections.original ? 'border-[var(--dark)] bg-gray-50' : 'border-transparent hover:border-gray-200'}`}
+              onClick={() => toggleSelection('original')}
+            >
+              <div className="flex items-center justify-between mb-2 px-1">
+                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--gray)]">Originale</p>
+                {selections.original ? <CheckCircle2 size={18} className="text-[var(--dark)]" /> : <Circle size={18} className="text-gray-300" />}
+              </div>
               <div className="aspect-[4/5] overflow-hidden rounded border border-[var(--border)] bg-gray-50">
                 <img src={originalUrl} alt="Originale" className="h-full w-full object-cover grayscale-[30%] opacity-80" />
               </div>
             </div>
-            <div>
-              <p className="mb-2 text-center text-xs font-bold uppercase tracking-wider text-[#C2185B]">Version IA</p>
-              <div className="aspect-[4/5] overflow-hidden rounded border-2 border-[#C2185B] bg-gray-50 shadow-[var(--shadow-md)]">
-                <img src={generatedBlobUrl} alt="Générée" className="h-full w-full object-cover" />
+            
+            {/* IA 1 */}
+            <div 
+              className={`cursor-pointer rounded border-2 transition-all p-1 ${selections.ai0 ? 'border-[#C2185B] bg-[#FFF8FB]' : 'border-transparent hover:border-pink-100'}`}
+              onClick={() => toggleSelection('ai0')}
+            >
+              <div className="flex items-center justify-between mb-2 px-1">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#C2185B]">Version 1</p>
+                {selections.ai0 ? <CheckCircle2 size={18} className="text-[#C2185B]" /> : <Circle size={18} className="text-gray-300" />}
+              </div>
+              <div className="aspect-[4/5] overflow-hidden rounded border border-[var(--border)] bg-gray-50 shadow-sm">
+                <img src={aiImages[0]} alt="IA 1" className="h-full w-full object-cover" />
+              </div>
+            </div>
+
+            {/* IA 2 */}
+            <div 
+              className={`cursor-pointer rounded border-2 transition-all p-1 ${selections.ai1 ? 'border-[#C2185B] bg-[#FFF8FB]' : 'border-transparent hover:border-pink-100'}`}
+              onClick={() => toggleSelection('ai1')}
+            >
+              <div className="flex items-center justify-between mb-2 px-1">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#C2185B]">Version 2</p>
+                {selections.ai1 ? <CheckCircle2 size={18} className="text-[#C2185B]" /> : <Circle size={18} className="text-gray-300" />}
+              </div>
+              <div className="aspect-[4/5] overflow-hidden rounded border border-[var(--border)] bg-gray-50 shadow-sm">
+                <img src={aiImages[1]} alt="IA 2" className="h-full w-full object-cover" />
               </div>
             </div>
           </div>
           
-          <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-center">
-            <button type="button" onClick={() => uploadFinalImage(selectedFile)} className="flex items-center justify-center gap-2 rounded border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--dark)] hover:bg-gray-50 transition-colors">
-              Garder l'originale
+          <div className="flex flex-col gap-2 pt-4 sm:flex-row sm:justify-end items-center border-t border-[var(--border)] mt-4">
+            <button type="button" onClick={processImage} className="flex items-center justify-center gap-2 rounded border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--dark)] hover:bg-gray-50 transition-colors sm:mr-auto">
+              <RefreshCw size={16} /> Relancer l'IA
             </button>
-            <button type="button" onClick={processImage} className="flex items-center justify-center gap-2 rounded border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--dark)] hover:bg-gray-50 transition-colors">
-              <RefreshCw size={16} /> Régénérer
-            </button>
-            <button type="button" onClick={() => uploadFinalImage(generatedBlob, 'ai-generated.webp')} className="flex items-center justify-center gap-2 rounded bg-[#C2185B] px-4 py-2 text-sm font-semibold text-white hover:bg-[#A0134A] transition-colors shadow-md">
-              <Check size={16} /> Valider l'IA
+            <span className="text-sm font-medium text-[var(--gray)] mr-2">
+              {getSelectedCount()} sélectionnée(s)
+            </span>
+            <button 
+              type="button" 
+              onClick={uploadSelectedImages} 
+              disabled={getSelectedCount() === 0}
+              className="flex items-center justify-center gap-2 rounded bg-[#C2185B] px-6 py-2 text-sm font-semibold text-white hover:bg-[#A0134A] transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Check size={16} /> Ajouter {getSelectedCount() > 1 ? 'les images' : 'l\'image'}
             </button>
           </div>
         </div>
@@ -204,7 +253,7 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
       {state === 'UPLOADING' && (
         <div className="flex min-h-[200px] flex-col items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] bg-[#F9F9F9] relative z-10">
           <Loader2 className="mb-4 animate-spin text-[var(--primary)]" size={32} />
-          <p className="font-medium text-[var(--dark)]">Enregistrement définitif...</p>
+          <p className="font-medium text-[var(--dark)]">Enregistrement des images sélectionnées...</p>
         </div>
       )}
     </div>

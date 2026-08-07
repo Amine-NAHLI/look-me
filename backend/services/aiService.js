@@ -34,7 +34,7 @@ The generated image must remain an accurate representation of the physical produ
   }
 };
 
-async function generateImage(imageArray, presetKey) {
+async function generateImage(imageArray, presetKey, seed = null) {
   if (!env.CLOUDFLARE_ACCOUNT_ID || !env.CLOUDFLARE_API_TOKEN) {
     throw new AppError('Cloudflare AI is not configured', 500, 'AI_CONFIG_ERROR');
   }
@@ -44,19 +44,24 @@ async function generateImage(imageArray, presetKey) {
   // Modèle FLUX spécifié par l'utilisateur
   const url = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-2-klein-4b`;
 
+  const requestBody = {
+    prompt: preset.prompt,
+    image: imageArray,
+    guidance: 7.5,
+    num_steps: 20
+  };
+  
+  if (seed !== null) {
+    requestBody.seed = seed;
+  }
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      prompt: preset.prompt,
-      image: imageArray,
-      // Paramètres optionnels que FLUX peut accepter
-      guidance: 7.5,
-      num_steps: 20
-    })
+    body: JSON.stringify(requestBody)
   });
 
   if (!response.ok) {
@@ -65,9 +70,9 @@ async function generateImage(imageArray, presetKey) {
     throw new AppError('Échec de la génération de l\'image par l\'IA', 502, 'AI_GENERATION_FAILED');
   }
 
-  // Cloudflare renvoie généralement l'image binaire directement
   const arrayBuffer = await response.arrayBuffer();
-  return Buffer.from(arrayBuffer);
+  const buffer = Buffer.from(arrayBuffer);
+  return buffer.toString('base64');
 }
 
 module.exports = { PRESETS, generateImage };

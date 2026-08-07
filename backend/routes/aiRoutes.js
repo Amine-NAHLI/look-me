@@ -35,12 +35,23 @@ router.post('/process-image', protect, admin, aiLimiter, upload.single('image'),
     // Convertir le Buffer en un simple Array d'entiers pour le JSON body
     const imageArray = Array.from(processedBuffer);
 
-    // Appeler Cloudflare AI
-    const generatedImageBuffer = await generateImage(imageArray, presetKey);
+    // Appeler Cloudflare AI 2 fois en parallèle avec des seeds différentes
+    // On génère des seeds aléatoires (de 1 à 100000) pour forcer 2 images différentes
+    const seed1 = Math.floor(Math.random() * 100000) + 1;
+    const seed2 = Math.floor(Math.random() * 100000) + 1;
 
-    // Renvoyer directement le flux binaire de l'image (jpeg)
-    res.setHeader('Content-Type', 'image/jpeg');
-    res.send(generatedImageBuffer);
+    const [base64Image1, base64Image2] = await Promise.all([
+      generateImage(imageArray, presetKey, seed1),
+      generateImage(imageArray, presetKey, seed2)
+    ]);
+
+    // Renvoyer les images en JSON (base64)
+    res.json({
+      images: [
+        `data:image/jpeg;base64,${base64Image1}`,
+        `data:image/jpeg;base64,${base64Image2}`
+      ]
+    });
     
   } catch (err) {
     console.error('Error processing AI image:', err);
