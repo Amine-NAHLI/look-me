@@ -51,8 +51,12 @@ async function rotateSession(token, metadata) {
   if (!session || session.revokedAt || session.expiresAt < new Date() || session.tokenHash !== hash(token)) {
     throw new AppError('Session expirée', 401, 'INVALID_REFRESH_TOKEN');
   }
-  
-  await prisma.refreshSession.update({ where: { id: payload.sid }, data: { revokedAt: new Date() } }); 
+
+  const revoked = await prisma.refreshSession.updateMany({
+    where: { id: payload.sid, tokenHash: hash(token), revokedAt: null, expiresAt: { gt: new Date() } },
+    data: { revokedAt: new Date() }
+  });
+  if (revoked.count !== 1) throw new AppError('Session expirée', 401, 'INVALID_REFRESH_TOKEN');
   const user = await prisma.user.findUnique({ where: { id: payload.sub } }); 
   
   if (!user || !user.isActive) throw new AppError('Session invalide', 401, 'INVALID_REFRESH_TOKEN');

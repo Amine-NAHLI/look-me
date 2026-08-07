@@ -14,6 +14,14 @@ router.get('/', asyncHandler(async (_req, res) => {
   res.json({ items: categories });
 }));
 
+router.get('/admin/all', protect, admin, asyncHandler(async (_req, res) => {
+  const items = await prisma.category.findMany({
+    include: { _count: { select: { products: true } } },
+    orderBy: { name: 'asc' },
+  });
+  res.json({ items });
+}));
+
 router.post('/', protect, admin, validate(categorySchema), asyncHandler(async (req, res) => { 
   const category = await prisma.category.create({ 
     data: { ...req.body, slug: req.body.slug || toSlug(req.body.name) } 

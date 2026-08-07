@@ -2,14 +2,18 @@ process.env.NODE_ENV = 'test';
 const request = require('supertest');
 const { createApp } = require('../../app');
 const { prisma, connectDatabase, disconnectDatabase } = require('../../config/db');
+const hasDedicatedTestDatabase = /test/i.test(process.env.DATABASE_URL || '');
+const integrationDescribe = hasDedicatedTestDatabase ? describe : describe.skip;
 
-describe('Flux E2E : Commande Cash On Delivery (COD)', () => {
+integrationDescribe('Flux E2E : Commande Cash On Delivery (COD)', () => {
   let app;
   let testCategory;
   let testProduct;
+  let databaseReady = false;
 
   beforeAll(async () => {
     await connectDatabase();
+    databaseReady = true;
     app = createApp();
 
     // Clean up before test
@@ -35,6 +39,7 @@ describe('Flux E2E : Commande Cash On Delivery (COD)', () => {
   }, 30000);
 
   afterAll(async () => {
+    if (!databaseReady) return;
     await prisma.order.deleteMany({});
     await prisma.product.deleteMany({});
     await prisma.category.deleteMany({});

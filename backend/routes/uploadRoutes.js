@@ -43,7 +43,10 @@ const uploadToCloudinary = (buffer, filename) => {
 
 router.post('/', protect, admin, uploadLimiter, upload.single('image'), asyncHandler(async (req, res) => {
   if (!req.file) throw new AppError('Image JPEG, PNG ou WebP requise', 400, 'INVALID_FILE');
-  if (!env.CLOUDINARY_CLOUD_NAME) throw new AppError('Le stockage Cloudinary n\'est pas configuré', 500, 'CONFIG_ERROR');
+  
+  if (env.UPLOAD_PROVIDER !== 'local' && !env.CLOUDINARY_CLOUD_NAME) {
+    throw new AppError('Le stockage Cloudinary n\'est pas configuré', 500, 'CONFIG_ERROR');
+  }
   
   let metadata; 
   try { 
@@ -60,9 +63,39 @@ router.post('/', protect, admin, uploadLimiter, upload.single('image'), asyncHan
     .webp({ quality: 82 })
     .toBuffer();
 
-  const result = await uploadToCloudinary(processedBuffer, `product-${Date.now()}`);
+  const filename = `product-${Date.now()}`;
+  let imageUrl;
+  let width;
+  let height;
+
+  if (env.CLOUDINARY_CLOUD_NAME && env.UPLOAD_PROVIDER !== 'local') {
+    const result = await uploadToCloudinary(processedBuffer, filename);
+    imageUrl = result.secure_url;
+    width = result.width;
+    height = result.height;
+  } else {
+    // Local upload
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Ensure upload directory exists
+    if (!fs.existsSync(env.UPLOAD_DIRECTORY)) {
+      fs.mkdirSync(env.UPLOAD_DIRECTORY, { recursive: true });
+    }
+    
+    const fileExt = '.webp';
+    const filePath = path.join(env.UPLOAD_DIRECTORY, filename + fileExt);
+    await fs.promises.writeFile(filePath, processedBuffer);
+    
+    // Calculate final image dimensions
+    const finalMetadata = await sharp(processedBuffer).metadata();
+    width = finalMetadata.width;
+    height = finalMetadata.height;
+    
+    imageUrl = `${env.CLIENT_URL.replace(/5173$/, '5000')}/uploads/${filename}${fileExt}`;
+  }
   
-  res.status(201).json({ imageUrl: result.secure_url, width: result.width, height: result.height });
+  res.status(201).json({ imageUrl, width, height });
 }));
 
 module.exports = router;

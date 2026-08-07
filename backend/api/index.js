@@ -3,14 +3,10 @@ const { createApp } = require('../app');
 const { connectDatabase } = require('../config/db');
 
 const app = createApp();
-let dbConnected = false;
+let connection;
 
-app.use(async (req, res, next) => {
-  if (!dbConnected) {
-    await connectDatabase();
-    dbConnected = true;
-  }
-  next();
-});
-
-module.exports = app;
+module.exports = async (req, res) => {
+  connection ||= connectDatabase();
+  await connection;
+  return app(req, res);
+};

@@ -1,10 +1,11 @@
 const nodemailer = require('nodemailer');
 const { env } = require('../config/env');
 const logger = require('../config/logger');
+const AppError = require('../utils/AppError');
 
 const createTransporter = () => {
   if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) {
-    logger.warn('SMTP configuration is missing. Emails will be logged instead of sent.');
+    logger.warn('SMTP configuration is missing. Email delivery is disabled.');
     return null;
   }
   return nodemailer.createTransport({
@@ -19,6 +20,8 @@ const createTransporter = () => {
 };
 
 const transporter = createTransporter();
+const isEmailConfigured = Boolean(transporter);
+const escapeHtml = (value) => String(value).replace(/[&<>'\"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
 
 const sendEmail = async ({ to, subject, html }) => {
   const mailOptions = {
@@ -28,10 +31,7 @@ const sendEmail = async ({ to, subject, html }) => {
     html,
   };
 
-  if (!transporter) {
-    logger.info({ mailOptions }, 'Mock Email Sent (SMTP not configured)');
-    return;
-  }
+  if (!transporter) throw new AppError('Le service e-mail n’est pas configuré', 503, 'EMAIL_UNAVAILABLE');
 
   try {
     const info = await transporter.sendMail(mailOptions);
@@ -46,7 +46,7 @@ const sendPasswordResetEmail = async (user, resetUrl) => {
   const subject = 'Réinitialisation de votre mot de passe - Look-Me';
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2>Bonjour ${user.firstName},</h2>
+      <h2>Bonjour ${escapeHtml(user.firstName)},</h2>
       <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
       <p>Veuillez cliquer sur le bouton ci-dessous pour choisir un nouveau mot de passe. Ce lien est valide pendant 1 heure.</p>
       <div style="text-align: center; margin: 30px 0;">
@@ -65,4 +65,5 @@ const sendPasswordResetEmail = async (user, resetUrl) => {
 module.exports = {
   sendEmail,
   sendPasswordResetEmail,
+  isEmailConfigured,
 };

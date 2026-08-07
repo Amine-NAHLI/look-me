@@ -7,12 +7,16 @@ const deliveryFor = (city) => ['fes', 'fez'].includes(normalizeCity(city)) ? 0 :
 const publicNumber = () => `LM-${new Date().getFullYear()}-${crypto.randomBytes(5).toString('hex').toUpperCase()}`;
 const hash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 
-async function createOrder({ user, input }) {
+const publicOrder = (order) => {
+  const { guestAccessTokenHash, idempotencyKey, ...safeOrder } = order;
+  return safeOrder;
+};
+
+async function createOrder({ user, input, guestAccessToken: accessToken }) {
   const existing = await prisma.order.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
   if (existing) {
-    if ((user && existing.userId === user.id) || !user) {
-      return { order: existing, guestAccessToken: undefined, replayed: true };
-    }
+    if (user && existing.userId === user.id) return { order: publicOrder(existing), guestAccessToken: undefined, replayed: true };
+    if (!user && !existing.userId && verifyGuestAccess(existing, accessToken)) return { order: publicOrder(existing), guestAccessToken: undefined, replayed: true };
     throw new AppError('Clé d’idempotence déjà utilisée', 409, 'IDEMPOTENCY_CONFLICT');
   }
 
@@ -87,7 +91,7 @@ async function createOrder({ user, input }) {
     return order;
   });
 
-  return { order: result, guestAccessToken, replayed: false };
+  return { order: publicOrder(result), guestAccessToken, replayed: false };
 }
 
 async function changeOrderStatus({ orderId, status, note, actor }) {
@@ -135,4 +139,4 @@ async function changeOrderStatus({ orderId, status, note, actor }) {
 
 function verifyGuestAccess(order, token) { return Boolean(token) && Boolean(order.guestAccessTokenHash) && crypto.timingSafeEqual(Buffer.from(hash(token)), Buffer.from(order.guestAccessTokenHash)); }
 
-module.exports = { createOrder, changeOrderStatus, verifyGuestAccess };
+module.exports = { createOrder, changeOrderStatus, verifyGuestAccess, publicOrder };

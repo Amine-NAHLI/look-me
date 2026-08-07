@@ -38,5 +38,12 @@ if (!parsed.success) {
   throw new Error(`Invalid environment configuration: ${details}`);
 }
 
+if (Boolean(parsed.data.CLOUDINARY_CLOUD_NAME) !== Boolean(parsed.data.CLOUDINARY_API_KEY) || Boolean(parsed.data.CLOUDINARY_CLOUD_NAME) !== Boolean(parsed.data.CLOUDINARY_API_SECRET)) {
+  throw new Error('Invalid environment configuration: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET must be configured together');
+}
+if (Boolean(parsed.data.SMTP_HOST) !== Boolean(parsed.data.SMTP_USER) || Boolean(parsed.data.SMTP_HOST) !== Boolean(parsed.data.SMTP_PASS)) {
+  throw new Error('Invalid environment configuration: SMTP_HOST, SMTP_USER and SMTP_PASS must be configured together');
+}
+
 const env = { ...parsed.data, CORS_ALLOWED_ORIGINS: parsed.data.CORS_ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()) };
 module.exports = { env };
