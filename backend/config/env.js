@@ -14,7 +14,7 @@ const raw = z.object({
   CORS_ALLOWED_ORIGINS: z.string().min(1),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   MAX_UPLOAD_SIZE: z.coerce.number().int().min(1024).max(10 * 1024 * 1024).default(5 * 1024 * 1024),
-  UPLOAD_PROVIDER: z.enum(['local']).default('local'),
+  UPLOAD_PROVIDER: z.enum(['local', 'cloudinary']).default('local'),
   UPLOAD_DIRECTORY: z.string().default(path.join(__dirname, '..', 'uploads')),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(200),

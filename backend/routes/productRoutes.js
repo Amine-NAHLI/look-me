@@ -62,7 +62,7 @@ router.get('/:id', validate(idParams, 'params'), asyncHandler(async (req, res) =
 }));
 
 router.post('/', protect, admin, validate(productSchema), asyncHandler(async (req, res) => { 
-  const category = await prisma.category.findFirst({ where: { id: req.body.category, status: 'active' } }); 
+  const category = await prisma.category.findFirst({ where: { id: req.body.category } }); 
   if (!category) throw new AppError('Catégorie introuvable', 400, 'INVALID_CATEGORY'); 
   
   const { category: categoryId, variants, ...productData } = req.body;
@@ -80,7 +80,7 @@ router.post('/', protect, admin, validate(productSchema), asyncHandler(async (re
 
 router.put('/:id', protect, admin, validate(idParams, 'params'), validate(productSchema.partial()), asyncHandler(async (req, res) => { 
   if (req.body.category) { 
-    const category = await prisma.category.findFirst({ where: { id: req.body.category, status: 'active' } }); 
+    const category = await prisma.category.findFirst({ where: { id: req.body.category } }); 
     if (!category) throw new AppError('Catégorie introuvable', 400, 'INVALID_CATEGORY'); 
   } 
   
