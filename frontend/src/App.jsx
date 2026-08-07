@@ -11,6 +11,7 @@ import { useUIStore } from './store/useUIStore'
 import SessionBootstrap from './components/SessionBootstrap'
 import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
+import GlobalLoader from './components/GlobalLoader'
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
 const ProductDetails = lazy(() => import('./pages/ProductDetails'))
@@ -44,6 +45,7 @@ const AdminRoute = ({ children }) => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <GlobalLoader />
       <SessionBootstrap />
       <Toaster
         position="bottom-right"
