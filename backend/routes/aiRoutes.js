@@ -27,9 +27,9 @@ router.post('/process-image', protect, admin, aiLimiter, upload.single('image'),
   const presetKey = req.body.preset || 'studio';
   
   try {
-    // Redimensionner et optimiser l'image pour Stable Diffusion v1.5 (qui travaille mieux en 512x512)
+    // Redimensionner et optimiser l'image en haute qualité pour l'E-commerce
     const processedBuffer = await sharp(req.file.buffer)
-      .resize({ width: 512, height: 512, fit: 'inside', withoutEnlargement: true })
+      .resize({ width: 1500, height: 1500, fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 90 })
       .toBuffer();
 

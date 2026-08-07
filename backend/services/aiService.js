@@ -16,8 +16,12 @@ async function generateImage(imageArray, presetKey, seed = null) {
     const formData = new FormData();
     formData.append('size', 'auto');
     formData.append('image_file', imageBuffer, { filename: 'upload.jpg', contentType: 'image/jpeg' });
-    // Optionnel : on peut ajouter un fond de couleur unie si on le souhaite (ex: 'white' ou '#FFFFFF')
+    // Rendre l'image parfaitement centrée, recadrée et ajouter une ombre de studio
     formData.append('bg_color', 'white');
+    formData.append('crop', 'true');
+    formData.append('crop_margin', '10%'); // Remove.bg API uses crop_margin
+    formData.append('type', 'product'); // Optimize for products
+    formData.append('add_shadow', 'true'); // Add a natural drop shadow
 
     const response = await axios.post('https://api.remove.bg/v1.0/removebg', formData, {
       headers: {

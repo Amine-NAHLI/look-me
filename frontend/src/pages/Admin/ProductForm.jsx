@@ -4,9 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import api from '../../utils/axiosConfig'
 import ImageUploader from '../../components/ImageUploader'
-import AIProductImageUploader from '../../components/AIProductImageUploader'
-import { Sparkles } from 'lucide-react'
-
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 const defaultVariants = SIZES.map(size => ({ size, stock: 0 }));
 const emptyProduct = { name: '', description: '', category: '', price: '', compareAtPrice: '', sku: '', featured: false, images: [], variants: defaultVariants }
@@ -28,7 +25,6 @@ function ProductEditor({ id, initialProduct }) {
   const client = useQueryClient()
   const [form, setForm] = useState(() => toForm(initialProduct))
   const [imageUrl, setImageUrl] = useState('')
-  const [showAI, setShowAI] = useState(false)
   const categories = useQuery({ queryKey: ['admin-categories'], queryFn: () => api.get('/categories/admin/all').then(({ data }) => data.items) })
   const save = useMutation({ mutationFn: (payload) => editing ? api.put(`/products/${id}`, payload) : api.post('/products', payload), onSuccess: () => { client.invalidateQueries({ queryKey: ['admin-products'] }); toast.success(editing ? 'Produit mis à jour' : 'Produit créé'); navigate('/admin/products') }, onError: (error) => toast.error(error.response?.data?.error?.message || 'Enregistrement impossible') })
   const change = (event) => { const { name, value, type, checked } = event.target; setForm((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value })) }
@@ -39,16 +35,9 @@ function ProductEditor({ id, initialProduct }) {
       <section className="grid gap-5 rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-5 md:grid-cols-2"><h2 className="col-span-full font-heading text-2xl">Prix et visibilité</h2><label className="text-sm font-medium">Prix (MAD)<input required name="price" type="number" min="0" step="0.01" value={form.price} onChange={change} className={field} /></label><label className="text-sm font-medium">Ancien prix (facultatif)<input name="compareAtPrice" type="number" min="0" step="0.01" value={form.compareAtPrice} onChange={change} className={field} /></label><label className="text-sm font-medium">SKU<input name="sku" value={form.sku || ''} onChange={change} className={field} /></label><label className="flex items-center gap-3 self-end pb-3 text-sm font-medium"><input name="featured" type="checkbox" checked={form.featured} onChange={change} /> Mettre en avant</label></section>
       <section className="rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-5"><h2 className="font-heading text-2xl">Stocks par taille</h2><div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">{form.variants.map((variant, index) => <label key={variant.size} className="text-sm font-medium">Taille {variant.size}<input type="number" min="0" step="1" className={field} value={variant.stock} onChange={(e) => { const newVariants = [...form.variants]; newVariants[index].stock = Number(e.target.value) || 0; setForm((current) => ({ ...current, variants: newVariants })); }} /></label>)}</div></section>
       <section className="rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-5"><h2 className="font-heading text-2xl">Images</h2><div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{form.images.map((image, index) => <div key={`${image}-${index}`} className="relative"><img src={image} alt="" className="aspect-[4/5] w-full rounded object-cover" /><button type="button" onClick={() => setForm((current) => ({ ...current, images: current.images.filter((_, imageIndex) => imageIndex !== index) }))} className="mt-2 text-sm text-red-700 underline">Retirer</button></div>)}
-      {!showAI ? (
-        <div className="flex flex-col gap-2">
-          <ImageUploader onUploadComplete={(url) => addImage(url)} />
-          <button type="button" onClick={() => setShowAI(true)} className="flex w-full items-center justify-center gap-2 rounded bg-black py-3 text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:bg-gray-800"><Sparkles size={14} /> Essayer le Studio IA</button>
-        </div>
-      ) : (
-        <div className="col-span-full">
-          <AIProductImageUploader onUploadComplete={(url) => { addImage(url); setShowAI(false); }} onCancel={() => setShowAI(false)} />
-        </div>
-      )}
+      <div className="flex flex-col gap-2">
+        <ImageUploader onUploadComplete={(url) => addImage(url)} />
+      </div>
       </div></section>
       <div className="flex justify-end gap-3"><Link className="rounded border border-[var(--border)] px-5 py-3 text-sm font-semibold" to="/admin/products">Annuler</Link><button type="submit" disabled={save.isPending || categories.isLoading} className="rounded bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{save.isPending ? 'Enregistrement…' : 'Enregistrer'}</button></div>
     </form>
