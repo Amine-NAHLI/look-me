@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { UploadCloud, X, Loader2, Sparkles, RefreshCw, Check, CheckCircle2, Circle } from 'lucide-react';
+import { UploadCloud, X, Loader2, Sparkles, RefreshCw, Check, CheckCircle2, Circle, Image as ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../utils/axiosConfig';
 
@@ -10,9 +10,8 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
   const [state, setState] = useState('EMPTY'); // EMPTY, SELECTED, PROCESSING, GENERATED, UPLOADING
   const [selectedFile, setSelectedFile] = useState(null);
   const [originalUrl, setOriginalUrl] = useState(null);
-  const [aiImages, setAiImages] = useState([]);
-  const [selections, setSelections] = useState({ original: false, ai0: false, ai1: false });
-  const [preset, setPreset] = useState('studio');
+  const [aiImage, setAiImage] = useState(null);
+  const [selections, setSelections] = useState({ original: false, ai: false });
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -52,34 +51,32 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
     
     const formData = new FormData();
     formData.append('image', selectedFile);
-    formData.append('preset', preset);
 
     try {
       const response = await api.post('/ai/process-image', formData, {
-        timeout: 120000 // Les 2 générations peuvent prendre du temps
+        timeout: 120000 
       });
 
-      setAiImages(response.data.images);
-      setSelections({ original: false, ai0: true, ai1: false }); // Sélectionner la première IA par défaut
+      setAiImage(response.data.images[0].url);
+      setSelections({ original: false, ai: true });
       setState('GENERATED');
-      toast.success('Images générées avec succès !');
+      toast.success('Détourage réussi !');
     } catch (err) {
       console.error(err);
-      // Extraire le message d'erreur renvoyé par le backend
-      const errorMsg = err.response?.data?.error?.message || 'Erreur lors du traitement IA. Vérifiez vos identifiants Cloudflare.';
+      const errorMsg = err.response?.data?.error?.message || 'Erreur lors du traitement. Vérifiez votre clé API Remove.bg.';
       toast.error(errorMsg, { duration: 6000 });
       setState('SELECTED');
     }
   };
 
-  const base64ToFile = async (base64Str, filename) => {
-    const res = await fetch(base64Str);
+  const urlToFile = async (url, filename) => {
+    const res = await fetch(url);
     const blob = await res.blob();
     return new File([blob], filename, { type: blob.type });
   };
 
   const uploadSelectedImages = async () => {
-    const hasSelection = selections.original || selections.ai0 || selections.ai1;
+    const hasSelection = selections.original || selections.ai;
     if (!hasSelection) return toast.error('Veuillez sélectionner au moins une image.');
 
     setState('UPLOADING');
@@ -87,15 +84,13 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
     try {
       const filesToUpload = [];
       if (selections.original) filesToUpload.push(selectedFile);
-      if (selections.ai0 && aiImages[0]) filesToUpload.push(await base64ToFile(aiImages[0], 'ai-1.webp'));
-      if (selections.ai1 && aiImages[1]) filesToUpload.push(await base64ToFile(aiImages[1], 'ai-2.webp'));
+      if (selections.ai && aiImage) filesToUpload.push(await urlToFile(aiImage, 'detoure.jpg'));
 
-      // Uploader toutes les images sélectionnées une par une
       for (const file of filesToUpload) {
         const formData = new FormData();
         formData.append('image', file);
         const res = await api.post('/uploads', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-        onUploadComplete(res.data.imageUrl); // Ajouter l'image au produit
+        onUploadComplete(res.data.imageUrl);
       }
 
       toast.success(`${filesToUpload.length} image(s) ajoutée(s) au produit !`);
@@ -111,7 +106,7 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
 
   const toggleSelection = (key) => setSelections(p => ({ ...p, [key]: !p[key] }));
   
-  const getSelectedCount = () => [selections.original, selections.ai0, selections.ai1].filter(Boolean).length;
+  const getSelectedCount = () => [selections.original, selections.ai].filter(Boolean).length;
 
   return (
     <div className="w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-5 shadow-sm mt-4 relative overflow-hidden">
@@ -119,7 +114,7 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
       
       <div className="mb-4 flex items-center justify-between relative z-10">
         <h3 className="flex items-center gap-2 font-heading text-xl text-[var(--dark)]">
-          <Sparkles className="text-[#C2185B]" size={20} /> Studio Photo IA
+          <Sparkles className="text-[#C2185B]" size={20} /> Détourage Parfait (Fond Blanc)
         </h3>
         {onCancel && (
           <button type="button" onClick={onCancel} className="text-sm font-medium text-[var(--gray)] hover:text-[var(--dark)] flex items-center gap-1">
@@ -145,7 +140,7 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
             Glissez une photo brute ou cliquez pour parcourir
           </p>
           <p className="mt-2 text-[11px] uppercase tracking-wide text-[var(--gray)] font-semibold">
-            Nous générerons 2 propositions IA !
+            Le vêtement sera détouré et placé sur fond blanc
           </p>
           <input type="file" ref={fileInputRef} onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])} className="hidden" accept="image/jpeg, image/png, image/webp" />
         </div>
@@ -158,20 +153,13 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
               <img src={originalUrl} alt="Originale" className="h-full w-full object-cover" />
             </div>
             <div className="flex w-full flex-col justify-center space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-[var(--dark)]">Style de rendu IA</label>
-                <select value={preset} onChange={(e) => setPreset(e.target.value)} className="w-full rounded border border-[var(--border)] p-2 text-sm bg-white outline-none focus:border-[var(--primary)]">
-                  <option value="studio">Studio Classique (Fond clair, professionnel)</option>
-                  <option value="minimal">Minimaliste (Très épuré, ombres douces)</option>
-                  <option value="premium">Premium (Contraste luxueux, mode)</option>
-                </select>
-              </div>
+              <p className="text-sm text-gray-600">L'image va être détourée professionnellement sur un fond blanc pur sans modifier la forme du produit.</p>
               <div className="flex gap-2">
                 <button type="button" onClick={() => setState('EMPTY')} className="rounded border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--dark)] hover:bg-gray-50 transition-colors">
                   Changer
                 </button>
                 <button type="button" onClick={processImage} className="flex flex-1 items-center justify-center gap-2 rounded bg-black px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gray-800">
-                  <Sparkles size={16} /> Générer 2 propositions
+                  <ImageIcon size={16} /> Détourer sur fond blanc
                 </button>
               </div>
             </div>
@@ -182,15 +170,14 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
       {state === 'PROCESSING' && (
         <div className="flex min-h-[200px] flex-col items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border)] bg-[#F9F9F9] relative z-10">
           <Loader2 className="mb-4 animate-spin text-[#C2185B]" size={32} />
-          <p className="font-heading text-lg text-[var(--dark)]">La magie opère...</p>
-          <p className="text-sm text-[var(--gray)] mt-1">Génération de 2 rendus en cours...</p>
+          <p className="font-heading text-lg text-[var(--dark)]">Détourage en cours...</p>
+          <p className="text-sm text-[var(--gray)] mt-1">Veuillez patienter...</p>
         </div>
       )}
 
       {state === 'GENERATED' && (
         <div className="space-y-4 relative z-10">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Originale */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div 
               className={`cursor-pointer rounded border-2 transition-all p-1 ${selections.original ? 'border-[var(--dark)] bg-gray-50' : 'border-transparent hover:border-gray-200'}`}
               onClick={() => toggleSelection('original')}
@@ -204,40 +191,22 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
               </div>
             </div>
             
-            {/* IA 1 */}
             <div 
-              className={`cursor-pointer rounded border-2 transition-all p-1 ${selections.ai0 ? 'border-[#C2185B] bg-[#FFF8FB]' : 'border-transparent hover:border-pink-100'}`}
-              onClick={() => toggleSelection('ai0')}
+              className={`cursor-pointer rounded border-2 transition-all p-1 ${selections.ai ? 'border-[#C2185B] bg-[#FFF8FB]' : 'border-transparent hover:border-pink-100'}`}
+              onClick={() => toggleSelection('ai')}
             >
               <div className="flex items-center justify-between mb-2 px-1">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#C2185B]">Version 1</p>
-                {selections.ai0 ? <CheckCircle2 size={18} className="text-[#C2185B]" /> : <Circle size={18} className="text-gray-300" />}
+                <p className="text-xs font-bold uppercase tracking-wider text-[#C2185B]">Détourée (Fond Blanc)</p>
+                {selections.ai ? <CheckCircle2 size={18} className="text-[#C2185B]" /> : <Circle size={18} className="text-gray-300" />}
               </div>
-              <div className="aspect-[4/5] overflow-hidden rounded border border-[var(--border)] bg-gray-50 shadow-sm">
-                <img src={aiImages[0]} alt="IA 1" className="h-full w-full object-cover" />
-              </div>
-            </div>
-
-            {/* IA 2 */}
-            <div 
-              className={`cursor-pointer rounded border-2 transition-all p-1 ${selections.ai1 ? 'border-[#C2185B] bg-[#FFF8FB]' : 'border-transparent hover:border-pink-100'}`}
-              onClick={() => toggleSelection('ai1')}
-            >
-              <div className="flex items-center justify-between mb-2 px-1">
-                <p className="text-xs font-bold uppercase tracking-wider text-[#C2185B]">Version 2</p>
-                {selections.ai1 ? <CheckCircle2 size={18} className="text-[#C2185B]" /> : <Circle size={18} className="text-gray-300" />}
-              </div>
-              <div className="aspect-[4/5] overflow-hidden rounded border border-[var(--border)] bg-gray-50 shadow-sm">
-                <img src={aiImages[1]} alt="IA 2" className="h-full w-full object-cover" />
+              <div className="aspect-[4/5] overflow-hidden rounded border border-[var(--border)] bg-gray-50 shadow-sm flex items-center justify-center">
+                <img src={aiImage} alt="Détourée" className="h-full w-full object-contain" />
               </div>
             </div>
           </div>
           
           <div className="flex flex-col gap-2 pt-4 sm:flex-row sm:justify-end items-center border-t border-[var(--border)] mt-4">
-            <button type="button" onClick={processImage} className="flex items-center justify-center gap-2 rounded border border-[var(--border)] px-4 py-2 text-sm font-medium text-[var(--dark)] hover:bg-gray-50 transition-colors sm:mr-auto">
-              <RefreshCw size={16} /> Relancer l'IA
-            </button>
-            <span className="text-sm font-medium text-[var(--gray)] mr-2">
+            <span className="text-sm font-medium text-[var(--gray)] mr-2 sm:mr-auto">
               {getSelectedCount()} sélectionnée(s)
             </span>
             <button 

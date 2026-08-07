@@ -2,6 +2,8 @@ const express = require('express');
 const multer = require('multer');
 const sharp = require('sharp');
 const rateLimit = require('express-rate-limit');
+const fs = require('fs');
+const path = require('path');
 const { env } = require('../config/env');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../middlewares/asyncHandler');
@@ -34,29 +36,26 @@ router.post('/process-image', protect, admin, aiLimiter, upload.single('image'),
     // Convertir le Buffer en un simple Array d'entiers pour le JSON body
     const imageArray = Array.from(processedBuffer);
 
-    // Appeler Cloudflare AI 2 fois en parallèle avec des seeds différentes
-    // On génère des seeds aléatoires (de 1 à 100000) pour forcer 2 images différentes
-    const seed1 = Math.floor(Math.random() * 100000) + 1;
-    const seed2 = Math.floor(Math.random() * 100000) + 1;
-
-    const results = await Promise.allSettled([
-      generateImage(imageArray, presetKey, seed1),
-      generateImage(imageArray, presetKey, seed2)
-    ]);
-
-    const failed = results.find(r => r.status === 'rejected');
-    if (failed) {
-      throw failed.reason;
-    }
-
-    const base64Image1 = results[0].value;
-    const base64Image2 = results[1].value;
-
-    // Renvoyer les images en JSON (base64)
+    // On génère 1 seule image (détourage parfait sur fond blanc)
+    const base64Image = await generateImage(imageArray);
+    
+    // Convertir l'image base64 en buffer et la sauvegarder temporairement pour Cloudinary
+    const buffer = Buffer.from(base64Image, 'base64');
+    
+    // Sauvegarder dans le dossier uploads
+    const filename = `ai-${Date.now()}.jpg`;
+    const tempPath = path.join(__dirname, '..', 'uploads', filename);
+    await fs.promises.writeFile(tempPath, buffer);
+    
+    // Renvoyer les informations au frontend
     res.json({
+      success: true,
       images: [
-        `data:image/jpeg;base64,${base64Image1}`,
-        `data:image/jpeg;base64,${base64Image2}`
+        {
+          url: `/uploads/${filename}`,
+          style: 'Fond blanc',
+          tempPath: tempPath
+        }
       ]
     });
     
