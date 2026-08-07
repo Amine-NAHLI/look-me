@@ -42,6 +42,8 @@ model Category {
   updatedAt DateTime  @updatedAt
 
   products  Product[]
+
+  @@index([status])
 }
 
 enum Status {
@@ -70,6 +72,10 @@ model Product {
 
   variants       ProductVariant[]
   orderItems     OrderItem[]
+
+  @@index([categoryId, status])
+  @@index([status, featured])
+  @@index([createdAt])
 }
 
 model ProductVariant {
@@ -81,6 +87,8 @@ model ProductVariant {
   color     String?  @db.VarChar(40)
   image     String?
   stock     Int      @default(0)
+
+  @@index([productId])
 }
 
 model Order {
@@ -123,6 +131,10 @@ model Order {
 
   items                OrderItem[]
   statusHistory        OrderStatusHistory[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([paymentStatus, createdAt])
 }
 
 enum PaymentStatus {
@@ -158,6 +170,8 @@ model OrderItem {
   quantity  Int
   lineTotal Float
   currency  String
+
+  @@index([productId])
 }
 
 model OrderStatusHistory {
@@ -168,6 +182,8 @@ model OrderStatusHistory {
   note      String?
   changedById String?
   changedAt DateTime @default(now())
+
+  @@index([orderId, changedAt])
 }
 
 model RefreshSession {
@@ -181,6 +197,8 @@ model RefreshSession {
   ip         String?   @db.VarChar(64)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+
+  @@index([userId, expiresAt])
 }
 
 model AuditLog {
@@ -193,4 +211,7 @@ model AuditLog {
   metadata     Json      @default("{}")
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  @@index([resourceType, resourceId, createdAt])
+  @@index([actorId, createdAt])
 }
