@@ -9,6 +9,7 @@ import { AnimatePresence } from 'framer-motion'
 import { Toaster } from 'react-hot-toast'
 import { useUIStore } from './store/useUIStore'
 import SessionBootstrap from './components/SessionBootstrap'
+import ErrorBoundary from './components/ErrorBoundary'
 import './index.css'
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
@@ -22,6 +23,11 @@ const OrdersList = lazy(() => import('./pages/Profile/OrdersList'))
 const OrderDetail = lazy(() => import('./pages/Profile/OrderDetail'))
 const UserInfos = lazy(() => import('./pages/Profile/UserInfos'))
 const LegalPage = lazy(() => import('./pages/LegalPage'))
+const AdminLayout = lazy(() => import('./pages/Admin/AdminLayout'))
+const ProductsList = lazy(() => import('./pages/Admin/ProductsList'))
+const ProductForm = lazy(() => import('./pages/Admin/ProductForm'))
+const CategoriesManager = lazy(() => import('./pages/Admin/CategoriesManager'))
+const AdminOrdersList = lazy(() => import('./pages/Admin/OrdersList'))
 
 const queryClient = new QueryClient()
 
@@ -44,10 +50,10 @@ function App() {
         toastOptions={{
           duration: 3000,
           style: {
-            fontFamily: 'Outfit, sans-serif',
+            fontFamily: 'Inter, sans-serif',
             fontSize: '13px',
-            borderRadius: '0px',
-            background: '#0A0A0A',
+            borderRadius: '8px',
+            background: '#1C1B1B',
             color: '#fff',
             border: '1px solid rgba(255,255,255,0.1)',
           }
@@ -55,7 +61,7 @@ function App() {
       />
       <Router>
         <ScrollToTop />
-        <Layout>
+        <ErrorBoundary><Layout>
           <Suspense fallback={<main className="grid min-h-[50vh] place-items-center" aria-busy="true">Chargement…</main>}>
           <AnimatePresence mode="wait">
             <Routes>
@@ -79,14 +85,21 @@ function App() {
                 <Route path="informations" element={<UserInfos />} />
               </Route>
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminRoute><PageTransition><AdminDashboard /></PageTransition></AdminRoute>} />
+              <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="products" element={<ProductsList />} />
+                <Route path="products/new" element={<ProductForm />} />
+                <Route path="products/:id/edit" element={<ProductForm />} />
+                <Route path="categories" element={<CategoriesManager />} />
+                <Route path="orders" element={<AdminOrdersList />} />
+              </Route>
               
               <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
             </Routes>
           </AnimatePresence>
           </Suspense>
-        </Layout>
+        </Layout></ErrorBoundary>
       </Router>
     </QueryClientProvider>
   )
