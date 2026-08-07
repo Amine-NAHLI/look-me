@@ -13,7 +13,7 @@ export default function Catalogue() {
     queryFn: () => api.get('/categories').then(({ data: response }) => response),
     staleTime: 5 * 60 * 1000,
   })
-  const categories = [{ id: '', name: 'Toutes les pièces' }, ...(data?.items || []).map((category) => ({ id: category._id, name: category.name }))]
+  const categories = [{ id: '', name: 'Toutes les pièces' }, ...(data?.items || []).map((category) => ({ id: category.id, name: category.name }))]
   const choose = (id) => { setSelectedCategory(id); setIsFilterOpen(false) }
 
   return (
