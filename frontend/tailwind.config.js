@@ -9,9 +9,9 @@ export default {
       colors: {
         background: '#FCF8F8',
         foreground: '#1C1B1B',
-        secondary: '#FFF4F8',
+        secondary: '#F0EDEC',
         accent: '#9B0044',
-        'accent-light': '#FFF4F8',
+        'accent-light': '#FFD9DF',
         pink: {
           50: '#FDF2F8',
           100: '#FCE7F3',

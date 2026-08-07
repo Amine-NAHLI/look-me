@@ -1,167 +1,69 @@
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { Search, ShoppingBag, User, Menu, X } from 'lucide-react';
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useUIStore } from '../store/useUIStore';
-import { drawerVariants, overlayVariants } from '../utils/animations';
+import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion'
+import { Menu, Search, ShoppingBag, User, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useUIStore } from '../store/useUIStore'
+import { drawerVariants, overlayVariants } from '../utils/animations'
+
+const links = [
+  { name: 'Accueil', path: '/' },
+  { name: 'Catalogue', path: '/catalogue' },
+  { name: 'Nouveautés', path: '/nouveautes' },
+]
+
+function Brand() {
+  return <span className="font-heading text-[1.35rem] font-semibold tracking-[0.12em] text-[var(--black)] md:text-[1.5rem]">LOOK<span className="text-[var(--primary)]">ME</span></span>
+}
 
 export default function Navbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const navigate = useNavigate();
-  const { cart, openCart, user, openAuthModal } = useUIStore();
-  const { scrollY } = useScroll();
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const closeButton = useRef(null)
+  const navigate = useNavigate()
+  const { cart, openCart, user, openAuthModal } = useUIStore()
+  const { scrollY } = useScroll()
+  const navShadow = useTransform(scrollY, [0, 80], ['none', '0 3px 20px rgba(10,10,10,0.08)'])
+  const cartItemsCount = cart.reduce((total, item) => total + item.qty, 0)
 
-  const navShadow = useTransform(scrollY, [0, 80], ['none', '0 2px 20px rgba(0,0,0,0.08)']);
+  useEffect(() => {
+    if (!isMenuOpen) return undefined
+    closeButton.current?.focus()
+    const onKeyDown = (event) => { if (event.key === 'Escape') setIsMenuOpen(false) }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [isMenuOpen])
 
-  const cartItemsCount = cart.reduce((acc, item) => acc + item.qty, 0);
+  const accountAction = () => user ? navigate('/profil') : openAuthModal()
 
-  const navLinks = [
-    { name: 'Accueil', path: '/' },
-    { name: 'Catalogue', path: '/catalogue' },
-    { name: 'Nouveautés', path: '/nouveautes' },
-  ];
-
-  return (
-    <>
-      <div className="bg-[#0A0A0A] text-white text-[11px] uppercase tracking-[2px] text-center py-2 font-body font-medium">
-        Livraison disponible partout au Maroc — Paiement à la livraison
-      </div>
-
-      <motion.nav 
-        initial={{ y: -80 }} 
-        animate={{ y: 0 }}
-        transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-        style={{ boxShadow: navShadow }}
-        className="sticky top-0 w-full z-[1000] bg-white border-b border-[var(--border)] h-[68px] flex items-center"
-      >
-        <div className="container mx-auto px-4 md:px-6 h-full grid grid-cols-3 items-center">
-          
-          <div className="flex items-center justify-start lg:hidden">
-            <button 
-              className="p-2 -ml-2 text-[var(--dark)] hover:text-[#C2185B] transition-colors" 
-              onClick={() => setIsMenuOpen(true)}
-            >
-              <Menu size={24} strokeWidth={1.5} />
-            </button>
-          </div>
-
-          <div className="hidden lg:flex items-center justify-start gap-8">
-            {navLinks.map((link) => (
-              <motion.div key={link.name}>
-                <Link
-                  to={link.path}
-                  className="font-body font-medium text-[12px] uppercase tracking-[2px] text-[#1C1C1C] transition-colors hover:text-[#C2185B]"
-                >
-                  {link.name}
-                </Link>
-              </motion.div>
-            ))}
-            {user?.role === 'admin' && (
-              <Link 
-                to="/admin" 
-                className="font-body font-medium text-[12px] uppercase tracking-[2px] text-[#1C1C1C] transition-colors hover:text-[#C2185B]"
-              >
-                Admin
-              </Link>
-            )}
-          </div>
-
-          <Link to="/" className="flex justify-center items-center">
-            <span className="text-[20px] md:text-[22px] text-[var(--black)] font-body font-extrabold tracking-[-0.5px]">
-              LOOK<span className="text-[#C2185B]">ME</span>
-            </span>
-          </Link>
-
-          <div className="flex items-center justify-end gap-4 md:gap-5">
-            <motion.button 
-              onClick={() => navigate('/catalogue')}
-              className="text-[#1C1C1C] hidden sm:block"
-              whileHover={{ scale: 1.1, color: '#C2185B' }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Search size={20} strokeWidth={1.5} />
-            </motion.button>
-            
-            <motion.button 
-              onClick={() => user ? navigate('/profil') : openAuthModal()}
-              className="text-[#1C1C1C]"
-              whileHover={{ scale: 1.1, color: '#C2185B' }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <User size={20} strokeWidth={1.5} />
-            </motion.button>
-
-            <motion.button 
-              onClick={openCart}
-              className="text-[#1C1C1C] relative"
-              whileHover={{ scale: 1.1, color: '#C2185B' }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <ShoppingBag size={20} strokeWidth={1.5} />
-              <AnimatePresence>
-                {cartItemsCount > 0 && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] bg-[#C2185B] text-white text-[10px] font-bold font-body rounded-full flex items-center justify-center px-1"
-                  >
-                    {cartItemsCount}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.button>
+  return <>
+    <div className="bg-[var(--black)] px-4 py-2 text-center text-[10px] font-medium uppercase tracking-[0.16em] text-white sm:text-[11px]">
+      Paiement à la livraison disponible
+    </div>
+    <motion.header style={{ boxShadow: navShadow }} className="sticky top-0 z-[1000] border-b border-[var(--border)] bg-[var(--surface)]">
+      <nav aria-label="Navigation principale" className="mx-auto grid h-[72px] max-w-[var(--content-max)] grid-cols-3 items-center px-4 md:px-6">
+        <div className="flex items-center">
+          <button type="button" aria-label="Ouvrir le menu" aria-expanded={isMenuOpen} onClick={() => setIsMenuOpen(true)} className="grid h-11 w-11 place-items-center text-[var(--dark)] lg:hidden"><Menu size={23} strokeWidth={1.5} aria-hidden="true" /></button>
+          <div className="hidden items-center gap-7 lg:flex">
+            {links.map((link) => <Link key={link.path} to={link.path} className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--dark)] transition-colors hover:text-[var(--primary)]">{link.name}</Link>)}
+            {user?.role === 'admin' && <Link to="/admin/dashboard" className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--dark)] transition-colors hover:text-[var(--primary)]">Administration</Link>}
           </div>
         </div>
-      </motion.nav>
-
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <>
-            <motion.div
-              variants={overlayVariants}
-              initial="hidden" animate="visible" exit="exit"
-              onClick={() => setIsMenuOpen(false)}
-              className="fixed inset-0 bg-black/40 z-[1001]"
-            />
-            <motion.div
-              variants={drawerVariants}
-              initial="hidden" animate="visible" exit="exit"
-              className="fixed top-0 left-0 bottom-0 w-[300px] bg-white z-[1002] flex flex-col shadow-lg"
-              style={{ originX: 0 }}
-            >
-              <div className="p-6 border-b border-[var(--border)] flex justify-between items-center">
-                <span className="text-[18px] text-[var(--black)] font-body font-extrabold tracking-[-0.5px]">
-                  LOOK<span className="text-[#C2185B]">ME</span>
-                </span>
-                <button onClick={() => setIsMenuOpen(false)} className="text-[#1C1C1C]">
-                  <X size={24} strokeWidth={1.5} />
-                </button>
-              </div>
-              <div className="flex flex-col p-6 gap-6">
-                {navLinks.map((link, i) => (
-                  <motion.div
-                    key={link.name}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 + 0.2 }}
-                  >
-                    <Link
-                      to={link.path}
-                      onClick={() => setIsMenuOpen(false)}
-                      className="font-body font-medium text-[14px] uppercase tracking-[2px] text-[#1C1C1C] block"
-                    >
-                      {link.name}
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </>
-  );
+        <Link to="/" aria-label="LOOKME, accueil" className="justify-self-center"><Brand /></Link>
+        <div className="flex items-center justify-self-end gap-1 sm:gap-2">
+          <button type="button" aria-label="Rechercher dans le catalogue" onClick={() => navigate('/catalogue')} className="hidden h-11 w-11 place-items-center text-[var(--dark)] transition-colors hover:text-[var(--primary)] sm:grid"><Search size={20} strokeWidth={1.5} aria-hidden="true" /></button>
+          <button type="button" aria-label={user ? 'Accéder à mon compte' : 'Se connecter ou créer un compte'} onClick={accountAction} className="grid h-11 w-11 place-items-center text-[var(--dark)] transition-colors hover:text-[var(--primary)]"><User size={20} strokeWidth={1.5} aria-hidden="true" /></button>
+          <button type="button" aria-label={`Ouvrir le panier, ${cartItemsCount} article${cartItemsCount > 1 ? 's' : ''}`} onClick={openCart} className="relative grid h-11 w-11 place-items-center text-[var(--dark)] transition-colors hover:text-[var(--primary)]"><ShoppingBag size={20} strokeWidth={1.5} aria-hidden="true" />{cartItemsCount > 0 && <span className="absolute right-0 top-0 grid min-h-4 min-w-4 place-items-center rounded-full bg-[var(--primary-hover)] px-1 text-[10px] font-bold text-white">{cartItemsCount}</span>}</button>
+        </div>
+      </nav>
+    </motion.header>
+    <AnimatePresence>{isMenuOpen && <>
+      <motion.button type="button" aria-label="Fermer le menu" variants={overlayVariants} initial="hidden" animate="visible" exit="exit" onClick={() => setIsMenuOpen(false)} className="fixed inset-0 z-[1001] cursor-default bg-black/40" />
+      <motion.aside variants={drawerVariants} initial="hidden" animate="visible" exit="exit" aria-label="Menu mobile" className="fixed inset-y-0 left-0 z-[1002] flex w-[min(88vw,360px)] flex-col bg-[var(--surface)] shadow-lg">
+        <div className="flex items-center justify-between border-b border-[var(--border)] p-6"><Brand /><button ref={closeButton} type="button" aria-label="Fermer le menu" onClick={() => setIsMenuOpen(false)} className="grid h-11 w-11 place-items-center text-[var(--dark)]"><X size={22} strokeWidth={1.5} aria-hidden="true" /></button></div>
+        <div className="flex flex-col p-6">
+          {links.map((link) => <Link key={link.path} to={link.path} onClick={() => setIsMenuOpen(false)} className="border-b border-[var(--border)] py-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--dark)] hover:text-[var(--primary)]">{link.name}</Link>)}
+          {user?.role === 'admin' && <Link to="/admin/dashboard" onClick={() => setIsMenuOpen(false)} className="border-b border-[var(--border)] py-5 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--dark)] hover:text-[var(--primary)]">Administration</Link>}
+        </div>
+      </motion.aside>
+    </>}</AnimatePresence>
+  </>
 }

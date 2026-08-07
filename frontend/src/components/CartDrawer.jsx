@@ -54,6 +54,8 @@ export default function CartDrawer() {
                 Mon Panier <span className="text-[12px] font-body text-[var(--gray)] font-normal uppercase tracking-wider">({cartItemsCount})</span>
               </h2>
               <button 
+                type="button"
+                aria-label="Fermer le panier"
                 onClick={closeCart}
                 className="text-[var(--dark)] hover:text-[#C2185B] transition-colors"
               >
@@ -84,18 +86,20 @@ export default function CartDrawer() {
                       animate="visible"
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      key={item._id}
+                      key={item.id}
                       className="flex gap-4 group"
                     >
                       <div className="h-[120px] w-[90px] bg-[#F5F5F5] overflow-hidden flex-shrink-0">
-                        <img src={getImageUrl(item.image)} alt={item.name} className="h-full w-full object-cover" />
+                        {item.images?.[0] ? <img src={getImageUrl(item.images[0])} alt={item.name} className="h-full w-full object-cover" /> : <span className="grid h-full place-items-center text-xs text-[var(--gray)]">LOOKME</span>}
                       </div>
                       <div className="flex-grow min-w-0 flex flex-col justify-between py-1">
                         <div>
                           <div className="flex justify-between items-start mb-1">
                             <h4 className="font-body font-medium text-[14px] text-[var(--dark)] truncate pr-4">{item.name}</h4>
                             <button 
-                              onClick={() => handleRemove(item._id, item.name)}
+                              type="button"
+                              aria-label={`Retirer ${item.name} du panier`}
+                              onClick={() => handleRemove(item.id, item.name)}
                               className="text-[var(--gray)] hover:text-[#C2185B] transition-colors"
                             >
                               <Trash2 size={16} strokeWidth={1.5} />
@@ -107,11 +111,13 @@ export default function CartDrawer() {
                         <div className="flex items-center justify-between mt-auto">
                           <div className="flex items-center border border-[var(--border)]">
                             <button 
+                              type="button"
+                              aria-label={`Diminuer la quantité de ${item.name}`}
                               onClick={() => {
                                 if (item.qty > 1) {
-                                  updateQuantity(item._id, item.qty - 1);
+                                  updateQuantity(item.id, item.qty - 1);
                                 } else {
-                                  handleRemove(item._id, item.name);
+                                  handleRemove(item.id, item.name);
                                 }
                               }}
                               className="w-8 h-8 flex items-center justify-center text-[var(--dark)] hover:text-[#C2185B] transition-colors"
@@ -120,9 +126,11 @@ export default function CartDrawer() {
                             </button>
                             <span className="w-8 text-center font-body font-medium text-[12px]">{item.qty}</span>
                             <button 
+                              type="button"
+                              aria-label={`Augmenter la quantité de ${item.name}`}
                               onClick={() => {
                                 if (item.qty < (item.stock ?? 99)) {
-                                  updateQuantity(item._id, item.qty + 1);
+                                  updateQuantity(item.id, item.qty + 1);
                                 } else {
                                   toast.error("Stock maximum atteint");
                                 }
@@ -151,7 +159,7 @@ export default function CartDrawer() {
                   </div>
                   <div className="flex justify-between items-center font-body text-[12px] uppercase tracking-wider text-[var(--gray)]">
                     <span>Livraison</span>
-                    <span className="text-[#2E7D32]">Gratuite</span>
+                    <span className="text-[var(--gray)]">Calculée au checkout</span>
                   </div>
                   <div className="flex justify-between items-center pt-4 border-t border-[var(--border)]">
                     <span className="font-body font-medium text-[14px] uppercase tracking-wider text-[var(--dark)]">Total</span>
@@ -161,12 +169,14 @@ export default function CartDrawer() {
 
                 <div className="flex flex-col gap-3">
                   <button 
+                    type="button"
                     onClick={handleCheckout}
                     className="w-full bg-[#C2185B] text-white font-body font-semibold text-[12px] uppercase tracking-[2px] py-[16px] hover:bg-[#880E4F] transition-colors flex justify-center items-center gap-2 group"
                   >
                     Valider <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                   </button>
                   <button 
+                    type="button"
                     onClick={() => {
                       if(window.confirm('Vider tout le panier ?')) {
                         clearCart();
