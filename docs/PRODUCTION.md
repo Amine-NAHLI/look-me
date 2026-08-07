@@ -1,23 +1,26 @@
 # Mise en production LOOKME
 
-## Prérequis
+## Pré-requis
 
-- Node.js 22 LTS et MongoDB répliqué (transactions obligatoires) ou Docker Compose.
-- Variables de `api/.env.example` configurées avec deux secrets aléatoires distincts d'au moins 32 caractères.
-- Une origine HTTPS exacte dans `CLIENT_URL` et `CORS_ALLOWED_ORIGINS`; `TRUST_PROXY=true` seulement derrière un proxy de confiance.
+- Node.js 22, PostgreSQL et une URL `DATABASE_URL` dédiée à la production ;
+- secrets JWT distincts, aléatoires et d'au moins 32 caractères ;
+- domaine HTTPS exact dans `CLIENT_URL` et `CORS_ALLOWED_ORIGINS` ;
+- `TRUST_PROXY=true` uniquement derrière un proxy de confiance.
 
 ## Déploiement
 
-1. Exécuter `npm ci` dans `api` et `client`, puis les commandes CI.
-2. Appliquer `node scripts/migrateInventory.js` après une sauvegarde de la base.
-3. Créer l'administrateur avec `node scripts/createAdmin.js`; ne jamais utiliser de mot de passe par défaut.
-4. Déployer l'API avec un volume persistant pour les uploads ou, en production, remplacer le fournisseur local par un stockage objet avant exposition publique.
-5. Vérifier `/health` et `/ready`, les cookies Secure, CORS, CSP et les parcours COD.
+1. Exécuter les validations CI et `npm audit --omit=dev --audit-level=high`.
+2. Prendre une sauvegarde PostgreSQL testée avant toute migration.
+3. Appliquer `npx prisma migrate deploy` lorsque les migrations versionnées sont disponibles.
+4. Créer l'administrateur avec `node scripts/createAdmin.js`, sans mot de passe par défaut.
+5. Configurer Cloudinary avec ses trois variables si les uploads sont exposés.
+6. Configurer SMTP avec toutes ses variables avant d'activer la réinitialisation de mot de passe.
+7. Vérifier `/health`, `/ready`, les cookies Secure, CORS, le flux COD et la restauration d'une sauvegarde.
 
-## Sauvegarde, restauration et rollback
+## Sauvegarde et rollback
 
-Sauvegarder quotidiennement MongoDB (`mongodump`) et chiffrer les archives hors du serveur. Tester mensuellement `mongorestore` sur une base isolée. Avant toute migration, prendre un snapshot et conserver l'image applicative précédente : le rollback consiste à rétablir l'image et la sauvegarde compatible, jamais à modifier les commandes historiques.
+Effectuer des sauvegardes chiffrées quotidiennes PostgreSQL, les restaurer mensuellement sur une instance isolée et documenter le point de restauration. Le rollback applicatif doit utiliser l'image précédente compatible avec le schéma ; ne jamais modifier les snapshots de commande historiques.
 
 ## Limites externes
 
-L'e-mail transactionnel, un stockage objet, un domaine HTTPS, un outil de monitoring et toute intégration PSP restent à configurer avec leurs identifiants. Le paiement à la livraison est le seul flux de paiement activé.
+Le domaine HTTPS, le fournisseur SMTP, Cloudinary, la supervision/alerting et tout futur PSP doivent être configurés avec leurs propres identifiants. Le seul paiement actif est le paiement à la livraison.
