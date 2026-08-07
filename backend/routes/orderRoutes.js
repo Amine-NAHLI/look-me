@@ -45,6 +45,66 @@ router.get('/mine', protect, validate(pagination, 'query'), asyncHandler(async (
   res.json({ items: items.map(publicOrder), page, limit, total, totalPages: Math.ceil(total / limit) });
 }));
 
+router.get('/export/monthly', protect, admin, asyncHandler(async (req, res) => {
+  const now = new Date();
+  const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+  
+  const orders = await prisma.order.findMany({
+    where: { createdAt: { gte: firstDayLastMonth, lte: lastDayLastMonth } },
+    orderBy: { createdAt: 'asc' }
+  });
+
+  const fields = ['Numéro', 'Date', 'Client', 'Ville', 'Total (MAD)', 'Statut'];
+  const rows = orders.map(o => [
+    o.orderNumber,
+    o.createdAt.toISOString().split('T')[0],
+    `"${o.shippingFullName}"`,
+    `"${o.shippingCity}"`,
+    o.total,
+    o.status
+  ]);
+  const csv = [fields.join(','), ...rows.map(r => r.join(','))].join('\n');
+  
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="bilan-lookme-${firstDayLastMonth.getFullYear()}-${String(firstDayLastMonth.getMonth() + 1).padStart(2, '0')}.csv"`);
+  res.send('\uFEFF' + csv);
+}));
+
+router.get('/dashboard/stats', protect, admin, asyncHandler(async (req, res) => {
+  const settings = await prisma.storeSettings.upsert({
+    where: { id: 'default' },
+    update: {},
+    create: { id: 'default' }
+  });
+  
+  const [products, orders, allRecentOrders] = await Promise.all([
+    prisma.product.findMany({ where: { status: 'active' } }),
+    prisma.order.findMany({ where: { createdAt: { gte: settings.lastDashboardReset } } }),
+    prisma.order.findMany({ orderBy: { createdAt: 'desc' }, take: 5 })
+  ]);
+  
+  const revenue = orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + o.total, 0);
+  
+  res.json({
+    revenue,
+    periodOrdersCount: orders.length,
+    totalProducts: products.length,
+    lowStockCount: products.filter(p => p.stock <= 3).length,
+    lastReset: settings.lastDashboardReset,
+    recentOrders: allRecentOrders.map(publicOrder)
+  });
+}));
+
+router.post('/dashboard/reset', protect, admin, asyncHandler(async (req, res) => {
+  const settings = await prisma.storeSettings.upsert({
+    where: { id: 'default' },
+    update: { lastDashboardReset: new Date() },
+    create: { id: 'default', lastDashboardReset: new Date() }
+  });
+  res.json({ success: true, lastReset: settings.lastDashboardReset });
+}));
+
 router.get('/:id', optionalProtect, validate(orderParams, 'params'), asyncHandler(async (req, res) => { 
   const order = await prisma.order.findUnique({ where: { id: req.params.id }, include: { items: true, statusHistory: true } }); 
   if (!order) throw new AppError('Commande introuvable', 404, 'ORDER_NOT_FOUND'); 

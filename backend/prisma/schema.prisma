@@ -45,10 +45,7 @@ model Category {
 
 }
 
-enum Status {
-  active
-  archived
-}
+
 
 model Product {
   id             String    @id @default(uuid())
@@ -64,7 +61,6 @@ model Product {
   brand          String    @default("LOOKME") @db.VarChar(80)
   sku            String?   @unique
   stock          Int       @default(0)
-  status         Status    @default(active)
   featured       Boolean   @default(false)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -72,8 +68,8 @@ model Product {
   variants       ProductVariant[]
   orderItems     OrderItem[]
 
-  @@index([categoryId, status])
-  @@index([status, featured])
+  @@index([categoryId])
+  @@index([featured])
   @@index([createdAt])
 }
 
@@ -155,8 +151,8 @@ model OrderItem {
   id        String   @id @default(uuid())
   orderId   String
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
+  productId String?
+  product   Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
   variantId String?
   name      String
   slug      String?
@@ -214,3 +210,9 @@ model AuditLog {
   @@index([resourceType, resourceId, createdAt])
   @@index([actorId, createdAt])
 }
+
+model StoreSettings {
+  id                 String   @id @default("default")
+  lastDashboardReset DateTime @default(now())
+}
+

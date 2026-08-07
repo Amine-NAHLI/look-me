@@ -12,7 +12,6 @@ const toSlug = (name) => name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').t
 router.get('/', validate(pagination, 'query'), asyncHandler(async (req, res) => {
   const { page, limit, sort, category, q } = req.validated.query;
   const filter = { 
-    status: 'active', 
     ...(category ? { categoryId: category } : {}), 
     ...(q ? { name: { contains: q, mode: 'insensitive' } } : {}) 
   };
@@ -54,7 +53,7 @@ router.get('/admin/:id', protect, admin, validate(idParams, 'params'), asyncHand
 
 router.get('/:id', validate(idParams, 'params'), asyncHandler(async (req, res) => { 
   const product = await prisma.product.findFirst({ 
-    where: { id: req.params.id, status: 'active' }, 
+    where: { id: req.params.id }, 
     include: { category: { select: { id: true, name: true, slug: true } }, variants: true }
   }); 
   if (!product) throw new AppError('Produit introuvable', 404, 'PRODUCT_NOT_FOUND'); 
