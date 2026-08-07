@@ -1,12 +1,6 @@
-require('dotenv').config();
 const { createApp } = require('../app');
-const { connectDatabase } = require('../config/db');
 
+// Initialiser l'application Express pour Vercel (Serverless)
 const app = createApp();
-let connection;
 
-module.exports = async (req, res) => {
-  connection ||= connectDatabase();
-  await connection;
-  return app(req, res);
-};
+module.exports = app;
