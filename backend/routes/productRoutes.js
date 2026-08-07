@@ -112,10 +112,11 @@ router.put('/:id', protect, admin, validate(idParams, 'params'), validate(produc
 
 router.delete('/:id', protect, admin, validate(idParams, 'params'), asyncHandler(async (req, res) => { 
   try {
-    await prisma.product.update({ where: { id: req.params.id }, data: { status: 'archived' } }); 
+    await prisma.product.delete({ where: { id: req.params.id } }); 
     res.status(204).end(); 
   } catch (error) {
     if (error.code === 'P2025') throw new AppError('Produit introuvable', 404, 'PRODUCT_NOT_FOUND');
+    if (error.code === 'P2003') throw new AppError("Ce produit fait partie d'une commande et ne peut pas être supprimé.", 409, 'PRODUCT_IN_USE');
     throw error;
   }
 }));

@@ -43,7 +43,7 @@ router.put('/:id', protect, admin, validate(idParams, 'params'), validate(catego
 }));
 
 router.delete('/:id', protect, admin, validate(idParams, 'params'), asyncHandler(async (req, res) => { 
-  const used = await prisma.product.findFirst({ where: { categoryId: req.params.id, status: 'active' } }); 
+  const used = await prisma.product.findFirst({ where: { categoryId: req.params.id } }); 
   if (used) throw new AppError('Reclassez ou supprimez les produits de cette catégorie avant de la supprimer.', 409, 'CATEGORY_IN_USE'); 
   
   try {
