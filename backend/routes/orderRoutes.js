@@ -7,6 +7,7 @@ const { protect, admin, optionalProtect } = require('../middlewares/authMiddlewa
 const { createOrderSchema, statusSchema, orderParams } = require('../validators/order');
 const { pagination } = require('../validators/common');
 const { createOrder, changeOrderStatus, verifyGuestAccess, publicOrder } = require('../services/orderService');
+const PdfDocument = require('pdfkit-table');
 
 const router = express.Router();
 
@@ -55,20 +56,39 @@ router.get('/export/monthly', protect, admin, asyncHandler(async (req, res) => {
     orderBy: { createdAt: 'asc' }
   });
 
-  const fields = ['Numéro', 'Date', 'Client', 'Ville', 'Total (MAD)', 'Statut'];
-  const rows = orders.map(o => [
-    o.orderNumber,
-    o.createdAt.toISOString().split('T')[0],
-    `"${o.shippingFullName}"`,
-    `"${o.shippingCity}"`,
-    o.total,
-    o.status
-  ]);
-  const csv = [fields.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const doc = new PdfDocument({ margin: 30, size: 'A4' });
   
-  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-  res.setHeader('Content-Disposition', `attachment; filename="bilan-lookme-${firstDayLastMonth.getFullYear()}-${String(firstDayLastMonth.getMonth() + 1).padStart(2, '0')}.csv"`);
-  res.send('\uFEFF' + csv);
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="bilan-lookme-${firstDayLastMonth.getFullYear()}-${String(firstDayLastMonth.getMonth() + 1).padStart(2, '0')}.pdf"`);
+  
+  doc.pipe(res);
+
+  doc.fontSize(20).text(`Bilan Mensuel - LOOKME`, { align: 'center' });
+  doc.fontSize(12).text(`Période : ${firstDayLastMonth.toLocaleDateString('fr-FR')} au ${lastDayLastMonth.toLocaleDateString('fr-FR')}`, { align: 'center' });
+  doc.moveDown(2);
+
+  const table = {
+    headers: ['Numéro', 'Date', 'Client', 'Ville', 'Total (MAD)', 'Statut'],
+    rows: orders.map(o => [
+      o.orderNumber,
+      o.createdAt.toLocaleDateString('fr-FR'),
+      o.shippingFullName,
+      o.shippingCity,
+      o.total.toFixed(2),
+      o.status
+    ])
+  };
+
+  await doc.table(table, { 
+    prepareHeader: () => doc.font('Helvetica-Bold').fontSize(10),
+    prepareRow: () => doc.font('Helvetica').fontSize(10)
+  });
+
+  const totalRevenue = orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + o.total, 0);
+  doc.moveDown();
+  doc.font('Helvetica-Bold').fontSize(12).text(`Total des commandes livrees : ${totalRevenue.toFixed(2)} MAD`, { align: 'right' });
+
+  doc.end();
 }));
 
 router.get('/dashboard/stats', protect, admin, asyncHandler(async (req, res) => {
@@ -79,7 +99,7 @@ router.get('/dashboard/stats', protect, admin, asyncHandler(async (req, res) => 
   });
   
   const [products, orders, allRecentOrders] = await Promise.all([
-    prisma.product.findMany({ where: { status: 'active' } }),
+    prisma.product.findMany(),
     prisma.order.findMany({ where: { createdAt: { gte: settings.lastDashboardReset } } }),
     prisma.order.findMany({ orderBy: { createdAt: 'desc' }, take: 5 })
   ]);

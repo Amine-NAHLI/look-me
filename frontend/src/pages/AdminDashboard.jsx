@@ -42,7 +42,7 @@ export default function AdminDashboard() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `bilan-lookme-${new Date().getFullYear()}-${String(new Date().getMonth() || 12).padStart(2, '0')}.csv`);
+      link.setAttribute('download', `bilan-lookme-${new Date().getFullYear()}-${String(new Date().getMonth() || 12).padStart(2, '0')}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
         </div>
         <button onClick={handleDownload} className="inline-flex shrink-0 items-center gap-2 rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
           <Download size={16} />
-          Télécharger le CSV
+          Télécharger le PDF
         </button>
       </div>
     )}
