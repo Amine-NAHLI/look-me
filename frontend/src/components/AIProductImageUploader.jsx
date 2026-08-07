@@ -65,7 +65,9 @@ export default function AIProductImageUploader({ onUploadComplete, onCancel }) {
       toast.success('Images générées avec succès !');
     } catch (err) {
       console.error(err);
-      toast.error('Erreur lors du traitement IA. Vérifiez vos identifiants Cloudflare.');
+      // Extraire le message d'erreur renvoyé par le backend
+      const errorMsg = err.response?.data?.error?.message || 'Erreur lors du traitement IA. Vérifiez vos identifiants Cloudflare.';
+      toast.error(errorMsg, { duration: 6000 });
       setState('SELECTED');
     }
   };

@@ -25,10 +25,9 @@ router.post('/process-image', protect, admin, aiLimiter, upload.single('image'),
   const presetKey = req.body.preset || 'studio';
   
   try {
-    // Redimensionner et optimiser l'image pour FLUX
-    // Flux travaille généralement très bien avec des images autour de 1024x1024
+    // Redimensionner et optimiser l'image pour Stable Diffusion v1.5 (qui travaille mieux en 512x512)
     const processedBuffer = await sharp(req.file.buffer)
-      .resize({ width: 1024, height: 1024, fit: 'inside', withoutEnlargement: true })
+      .resize({ width: 512, height: 512, fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 90 })
       .toBuffer();
 
@@ -40,10 +39,18 @@ router.post('/process-image', protect, admin, aiLimiter, upload.single('image'),
     const seed1 = Math.floor(Math.random() * 100000) + 1;
     const seed2 = Math.floor(Math.random() * 100000) + 1;
 
-    const [base64Image1, base64Image2] = await Promise.all([
+    const results = await Promise.allSettled([
       generateImage(imageArray, presetKey, seed1),
       generateImage(imageArray, presetKey, seed2)
     ]);
+
+    const failed = results.find(r => r.status === 'rejected');
+    if (failed) {
+      throw failed.reason;
+    }
+
+    const base64Image1 = results[0].value;
+    const base64Image2 = results[1].value;
 
     // Renvoyer les images en JSON (base64)
     res.json({

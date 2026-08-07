@@ -4,33 +4,21 @@ const AppError = require('../utils/AppError');
 const PRESETS = {
   studio: {
     name: 'Studio classique',
-    prompt: `Transform this raw product photograph into a professional high-end e-commerce studio photograph.
-Preserve the EXACT physical product shown in the reference image.
-Do not redesign or modify the product.
-Preserve exactly: shape, dimensions and proportions, colors, logos, text, patterns, stitching, fabric/material, buttons, zippers, accessories, design details.
-Only improve the photographic presentation.
-Create: professional studio lighting, clean premium background (neutral light gray or white), realistic soft shadows, balanced exposure, sharp product details, professional composition, centered product, realistic commercial photography.
-The generated image must remain an accurate representation of the physical product that the customer will receive.`
+    prompt: `EXTREMELY STRICT INSTRUCTION: DO NOT ALTER, REDRAW, OR MODIFY THE CLOTHING/PRODUCT IN ANY WAY. You are a professional retoucher. Your ONLY job is to replace the background and lighting. 
+KEEP THE EXACT SAME GARMENT, exactly as it appears in the reference image. Preserve 100% of the original shape, wrinkles, colors, logos, buttons, fabric texture, and fit.
+Create a professional e-commerce studio lighting setup with a clean, pure white or light gray premium background. Add realistic soft shadows under/behind the product to ground it naturally. The garment MUST remain identical to the original photo.`
   },
   minimal: {
     name: 'Minimaliste',
-    prompt: `Transform this raw product photograph into a minimalist high-end e-commerce photograph.
-Preserve the EXACT physical product shown in the reference image.
-Do not redesign or modify the product.
-Preserve exactly: shape, dimensions and proportions, colors, logos, text, patterns, stitching, fabric/material, buttons, zippers, accessories, design details.
-Only improve the photographic presentation.
-Create: ultra-clean bright minimalist background, very soft natural lighting, extremely subtle and realistic shadows, sharp product details, professional minimalist composition, centered product.
-The generated image must remain an accurate representation of the physical product that the customer will receive.`
+    prompt: `EXTREMELY STRICT INSTRUCTION: DO NOT ALTER, REDRAW, OR MODIFY THE CLOTHING/PRODUCT IN ANY WAY. You are a professional retoucher. Your ONLY job is to replace the background and lighting. 
+KEEP THE EXACT SAME GARMENT, exactly as it appears in the reference image. Preserve 100% of the original shape, wrinkles, colors, logos, buttons, fabric texture, and fit.
+Create an ultra-clean, minimalist, bright aesthetic. Very soft natural lighting, extremely subtle and realistic shadows, sharp focus on the product, set against a pristine minimalist background. The garment MUST remain identical to the original photo.`
   },
   premium: {
     name: 'Premium',
-    prompt: `Transform this raw product photograph into a premium luxury fashion catalog photograph.
-Preserve the EXACT physical product shown in the reference image.
-Do not redesign or modify the product.
-Preserve exactly: shape, dimensions and proportions, colors, logos, text, patterns, stitching, fabric/material, buttons, zippers, accessories, design details.
-Only improve the photographic presentation.
-Create: luxury mood lighting, elegant high-end environment or clean premium gradient background, rich contrast, realistic soft shadows, sharp product details, professional composition, centered product, high fashion editorial feel.
-The generated image must remain an accurate representation of the physical product that the customer will receive.`
+    prompt: `EXTREMELY STRICT INSTRUCTION: DO NOT ALTER, REDRAW, OR MODIFY THE CLOTHING/PRODUCT IN ANY WAY. You are a professional retoucher. Your ONLY job is to replace the background and lighting. 
+KEEP THE EXACT SAME GARMENT, exactly as it appears in the reference image. Preserve 100% of the original shape, wrinkles, colors, logos, buttons, fabric texture, and fit.
+Create a luxury high-end fashion catalog mood. Elegant lighting, rich contrast, a premium studio environment or elegant gradient background, realistic soft shadows, high fashion editorial feel. The garment MUST remain identical to the original photo.`
   }
 };
 
@@ -41,13 +29,14 @@ async function generateImage(imageArray, presetKey, seed = null) {
 
   const preset = PRESETS[presetKey] || PRESETS.studio;
 
-  // Modèle FLUX spécifié par l'utilisateur
-  const url = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/ai/run/@cf/black-forest-labs/flux-2-klein-4b`;
+  // On utilise le modèle officiel FLUX de Cloudflare
+  const url = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/ai/run/@cf/runwayml/stable-diffusion-v1-5-img2img`;
 
   const requestBody = {
     prompt: preset.prompt,
     image: imageArray,
-    guidance: 7.5,
+    guidance: 8.5, // Augmenté pour forcer l'IA à suivre le prompt à la lettre
+    strength: 0.75, // Indique à l'IA de conserver fortement l'image d'origine (image-to-image)
     num_steps: 20
   };
   
@@ -66,8 +55,13 @@ async function generateImage(imageArray, presetKey, seed = null) {
 
   if (!response.ok) {
     const text = await response.text();
-    console.error('Cloudflare AI Error:', text);
-    throw new AppError('Échec de la génération de l\'image par l\'IA', 502, 'AI_GENERATION_FAILED');
+    console.error('Cloudflare AI Error:', response.status, text);
+    
+    if (response.status === 429 || text.includes('rate limit') || text.includes('quota')) {
+      throw new AppError('Quota quotidien atteint ou serveurs IA surchargés. Veuillez réessayer demain.', 429, 'AI_QUOTA_EXCEEDED');
+    }
+    
+    throw new AppError('Le serveur d\'Intelligence Artificielle ne répond pas pour le moment. Veuillez réessayer plus tard.', 502, 'AI_GENERATION_FAILED');
   }
 
   const arrayBuffer = await response.arrayBuffer();
