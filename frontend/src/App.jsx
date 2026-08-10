@@ -10,6 +10,7 @@ import { Toaster } from 'react-hot-toast'
 import { useUIStore } from './store/useUIStore'
 import SessionBootstrap from './components/SessionBootstrap'
 import ErrorBoundary from './components/ErrorBoundary'
+import CustomCursor from './components/CustomCursor'
 import './index.css'
 
 
@@ -61,6 +62,7 @@ function App() {
         }}
       />
       <Router>
+        <CustomCursor />
         <ScrollToTop />
         <ErrorBoundary><Layout>
           <Suspense fallback={<main className="grid min-h-[50vh] place-items-center" aria-busy="true">Chargement…</main>}>

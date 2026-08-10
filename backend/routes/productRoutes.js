@@ -66,17 +66,22 @@ router.post('/', protect, admin, validate(productSchema), asyncHandler(async (re
   
   const { category: categoryId, variants, ...productData } = req.body;
   const totalStock = variants?.length > 0 ? variants.reduce((sum, v) => sum + (v.stock || 0), 0) : productData.stock;
-  const product = await prisma.product.create({ 
-    data: { 
-      ...productData, 
-      stock: totalStock,
-      slug: productData.slug || toSlug(productData.name),
-      categoryId,
-      variants: variants ? { create: variants } : undefined
-    },
-    include: { variants: true }
-  }); 
-  res.status(201).json({ product }); 
+  try {
+    const product = await prisma.product.create({ 
+      data: { 
+        ...productData, 
+        stock: totalStock,
+        slug: productData.slug || toSlug(productData.name),
+        categoryId,
+        variants: variants ? { create: variants } : undefined
+      },
+      include: { variants: true }
+    }); 
+    res.status(201).json({ product }); 
+  } catch (error) {
+    if (error.code === 'P2002') throw new AppError('Un produit avec ce nom ou SKU existe déjà.', 409, 'PRODUCT_EXISTS');
+    throw error;
+  }
 }));
 
 router.put('/:id', protect, admin, validate(idParams, 'params'), validate(productSchema.partial()), asyncHandler(async (req, res) => { 
