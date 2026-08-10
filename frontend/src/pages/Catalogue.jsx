@@ -4,7 +4,6 @@ import { Filter, X } from 'lucide-react'
 import ProductGrid from '../components/ProductGrid'
 import { useUIStore } from '../store/useUIStore'
 import api from '../utils/axiosConfig'
-
 export default function Catalogue() {
   const { selectedCategory, setSelectedCategory } = useUIStore()
   const [isFilterOpen, setIsFilterOpen] = useState(false)
@@ -15,7 +14,6 @@ export default function Catalogue() {
   })
   const categories = [{ id: '', name: 'Toutes les pièces' }, ...(data?.items || []).map((category) => ({ id: category.id, name: category.name }))]
   const choose = (id) => { setSelectedCategory(id); setIsFilterOpen(false) }
-
   return (
     <main className="min-h-screen bg-[var(--white)]">
       <section className="relative overflow-hidden bg-[#050505] px-4 py-20 text-center text-white md:py-32">
@@ -28,7 +26,6 @@ export default function Catalogue() {
           <p className="mx-auto mt-6 max-w-xl text-sm leading-7 text-white/70">Des pièces pensées pour une élégance contemporaine, au quotidien comme pour les moments qui comptent.</p>
         </div>
       </section>
-
       <div className="sticky top-0 z-30 border-b border-white/20 bg-white/70 py-4 shadow-[0_8px_32px_rgba(0,0,0,0.04)] backdrop-blur-xl">
         <div className="container mx-auto flex items-center justify-between gap-4 px-4 md:px-6 lg:px-12">
           <button type="button" onClick={() => setIsFilterOpen(true)} className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white/50 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--dark)] backdrop-blur-md transition-colors hover:bg-[var(--primary)] hover:text-white">
