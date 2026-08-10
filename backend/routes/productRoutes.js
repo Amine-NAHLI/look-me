@@ -64,7 +64,7 @@ router.post('/', protect, admin, validate(productSchema), asyncHandler(async (re
   const category = await prisma.category.findFirst({ where: { id: req.body.category } }); 
   if (!category) throw new AppError('Catégorie introuvable', 400, 'INVALID_CATEGORY'); 
   
-  const { category: categoryId, variants, ...productData } = req.body;
+  const { category: categoryId, variants, status, ...productData } = req.body;
   const totalStock = variants?.length > 0 ? variants.reduce((sum, v) => sum + (v.stock || 0), 0) : productData.stock;
   try {
     const product = await prisma.product.create({ 
@@ -90,7 +90,7 @@ router.put('/:id', protect, admin, validate(idParams, 'params'), validate(produc
     if (!category) throw new AppError('Catégorie introuvable', 400, 'INVALID_CATEGORY'); 
   } 
   
-  const { category: categoryId, variants, ...productData } = req.body;
+  const { category: categoryId, variants, status, ...productData } = req.body;
   const totalStock = variants?.length > 0 ? variants.reduce((sum, v) => sum + (v.stock || 0), 0) : productData.stock;
   
   try {
