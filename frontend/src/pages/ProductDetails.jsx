@@ -14,6 +14,7 @@ export default function ProductDetails() {
   const { addToCart } = useUIStore();
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const [selectedVariant, setSelectedVariant] = useState(null);
   const { data, isLoading, isError } = useQuery({ queryKey: ['product', id], queryFn: () => api.get(`/products/${id}`).then(({ data: response }) => response.product), enabled: Boolean(id) });
   const product = data;
   const images = product?.images || [];
@@ -21,7 +22,12 @@ export default function ProductDetails() {
   if (isLoading) return <main className="container mx-auto grid min-h-[50vh] place-items-center px-6" aria-busy="true">Chargement du produit…</main>;
   if (isError || !product) return <main className="container mx-auto py-24 text-center" role="alert"><h1 className="font-heading text-3xl">Produit introuvable</h1><Link className="mt-6 inline-block underline" to="/catalogue">Retour au catalogue</Link></main>;
 
-  const add = () => { addToCart(product, quantity); toast.success(`${product.name} ajouté au panier`); };
+  const add = () => { 
+    if (product.variants?.length > 0 && !selectedVariant) return toast.error('Veuillez choisir une taille');
+    const productToAdd = selectedVariant ? { ...product, id: selectedVariant.id, originalProductId: product.id, name: `${product.name} - ${selectedVariant.size}`, stock: selectedVariant.stock } : product;
+    addToCart(productToAdd, quantity); 
+    toast.success(`${productToAdd.name} ajouté au panier`); 
+  };
   const image = images[activeImage];
 
   return <main className="relative min-h-screen overflow-hidden bg-[var(--surface)]">
@@ -49,16 +55,72 @@ export default function ProductDetails() {
             
             <p className="mt-8 text-sm leading-7 text-[var(--gray)]">{product.description}</p>
             
-            <div className="mt-8">{product.stock > 0 ? <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-emerald-700 backdrop-blur-md"><Package size={14} aria-hidden="true" strokeWidth={2.5} /> En stock</p> : <p className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50/50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-red-700 backdrop-blur-md"><AlertCircle size={14} aria-hidden="true" strokeWidth={2.5} /> Rupture de stock</p>}</div>
+            <div className="mt-8">
+              {product.variants?.length > 0 ? (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold uppercase tracking-widest text-[var(--gray)]">Taille</span>
+                    {selectedVariant && (
+                      <span className={`text-xs font-bold ${selectedVariant.stock > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {selectedVariant.stock > 0 ? `${selectedVariant.stock} en stock` : 'Rupture'}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {product.variants.map((v) => {
+                      const isSelected = selectedVariant?.id === v.id;
+                      const isOutOfStock = v.stock <= 0;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          disabled={isOutOfStock}
+                          onClick={() => {
+                            setSelectedVariant(v);
+                            setQuantity(1);
+                          }}
+                          className={`relative flex h-12 min-w-[3rem] items-center justify-center rounded-xl border px-4 text-sm font-bold transition-all
+                            ${isSelected ? 'border-[var(--primary)] bg-[var(--primary)] text-white shadow-lg' : 'border-white/60 bg-white/50 text-[var(--dark)] hover:border-[var(--primary)]/50'}
+                            ${isOutOfStock ? 'cursor-not-allowed opacity-40' : ''}
+                          `}
+                        >
+                          {v.size || v.name}
+                          {isOutOfStock && (
+                            <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                              <div className="h-[2px] w-full rotate-45 bg-red-500/50"></div>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                product.stock > 0 ? (
+                  <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-emerald-700 backdrop-blur-md">
+                    <Package size={14} aria-hidden="true" strokeWidth={2.5} /> En stock ({product.stock})
+                  </p>
+                ) : (
+                  <p className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50/50 px-4 py-2 text-xs font-bold uppercase tracking-wider text-red-700 backdrop-blur-md">
+                    <AlertCircle size={14} aria-hidden="true" strokeWidth={2.5} /> Rupture de stock
+                  </p>
+                )
+              )}
+            </div>
             
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-              <div className="flex h-14 items-center rounded-full border border-[var(--border)] bg-white/50 px-2 backdrop-blur-md">
-                <button type="button" className="grid h-full w-12 place-items-center rounded-l-full hover:bg-[var(--primary)]/5 transition-colors" onClick={() => setQuantity((value) => Math.max(1, value - 1))} disabled={quantity <= 1 || product.stock <= 0} aria-label="Diminuer la quantité"><Minus size={17} /></button>
+              <div className="flex h-14 items-center rounded-[1rem] border border-white/60 bg-white/50 px-2 backdrop-blur-md shadow-sm">
+                <button type="button" className="grid h-full w-12 place-items-center rounded-l-xl hover:bg-white/80 transition-colors" onClick={() => setQuantity((value) => Math.max(1, value - 1))} disabled={quantity <= 1 || (selectedVariant ? selectedVariant.stock <= 0 : product.stock <= 0)} aria-label="Diminuer la quantité"><Minus size={17} /></button>
                 <span className="grid w-10 place-items-center font-bold" aria-live="polite">{quantity}</span>
-                <button type="button" className="grid h-full w-12 place-items-center rounded-r-full hover:bg-[var(--primary)]/5 transition-colors" onClick={() => setQuantity((value) => Math.min(product.stock, value + 1))} disabled={quantity >= product.stock || product.stock <= 0} aria-label="Augmenter la quantité"><Plus size={17} /></button>
+                <button type="button" className="grid h-full w-12 place-items-center rounded-r-xl hover:bg-white/80 transition-colors" onClick={() => setQuantity((value) => Math.min(selectedVariant ? selectedVariant.stock : product.stock, value + 1))} disabled={quantity >= (selectedVariant ? selectedVariant.stock : product.stock) || (selectedVariant ? selectedVariant.stock <= 0 : product.stock <= 0)} aria-label="Augmenter la quantité"><Plus size={17} /></button>
               </div>
-              <button type="button" disabled={product.stock <= 0} onClick={add} className="inline-flex h-14 flex-1 items-center justify-center gap-3 rounded-full bg-[var(--primary)] px-8 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_8px_20px_rgba(194,24,91,0.25)] transition-all hover:scale-[1.02] hover:bg-[var(--primary-hover)] hover:shadow-[0_12px_24px_rgba(194,24,91,0.35)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100">
-                <ShoppingBag size={18} aria-hidden="true" /> Ajouter au panier
+              <button 
+                type="button" 
+                disabled={(product.variants?.length > 0 && !selectedVariant) || (selectedVariant ? selectedVariant.stock <= 0 : product.stock <= 0)} 
+                onClick={add} 
+                className="inline-flex h-14 flex-1 items-center justify-center gap-3 rounded-[1rem] bg-[var(--primary)] px-8 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_8px_20px_rgba(194,24,91,0.25)] transition-all hover:scale-[1.02] hover:bg-[var(--primary-hover)] hover:shadow-[0_12px_24px_rgba(194,24,91,0.35)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+              >
+                <ShoppingBag size={18} aria-hidden="true" /> {(product.variants?.length > 0 && !selectedVariant) ? 'Choisir une taille' : 'Ajouter au panier'}
               </button>
             </div>
             
