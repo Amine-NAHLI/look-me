@@ -11,6 +11,7 @@ import { useUIStore } from './store/useUIStore'
 import SessionBootstrap from './components/SessionBootstrap'
 import ErrorBoundary from './components/ErrorBoundary'
 import CustomCursor from './components/CustomCursor'
+import Preloader from './components/Preloader'
 import './index.css'
 
 
@@ -62,6 +63,7 @@ function App() {
         }}
       />
       <Router>
+        <Preloader />
         <CustomCursor />
         <ScrollToTop />
         <ErrorBoundary><Layout>
