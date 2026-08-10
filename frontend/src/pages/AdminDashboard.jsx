@@ -46,7 +46,7 @@ export default function AdminDashboard() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (error) {
+    } catch {
       toast.error('Erreur lors du téléchargement');
     }
   };

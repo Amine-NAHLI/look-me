@@ -11,7 +11,7 @@ export default function GlobalLoader() {
     if (isFetching > 0) {
       timeout = setTimeout(() => setShow(true), 1000);
     } else {
-      setShow(false);
+      timeout = setTimeout(() => setShow(false), 0);
     }
     return () => clearTimeout(timeout);
   }, [isFetching]);
