@@ -42,7 +42,10 @@ export default function AuthModal() {
     try {
       const { data } = await api.post('/auth/forgot-password', { email: formData.email })
       toast.success(data.message || 'Si ce compte existe, un lien de réinitialisation a été envoyé.')
-    } catch (error) { toast.error(error.response?.data?.error?.message || 'Le service de réinitialisation est indisponible.') }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.response?.data?.error?.message || error.message || 'Erreur inconnue';
+      toast.error(`Erreur: ${errorMsg}`);
+    }
   }
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -56,7 +59,12 @@ export default function AuthModal() {
       setFormData(initialForm)
       closeAuthModal()
       toast.success(isLogin ? 'Connexion réussie.' : 'Compte créé avec succès.')
-    } catch (error) { toast.error(error.response?.data?.error?.message || 'L’authentification a échoué.') } finally { setLoading(false) }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.response?.data?.error?.message || error.message || 'Erreur inconnue';
+      toast.error(`Erreur: ${errorMsg}`);
+    } finally { 
+      setLoading(false);
+    }
   }
 
   return <AnimatePresence>{isAuthModalOpen && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[1100] grid place-items-center bg-black/45 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) closeAuthModal() }}>
