@@ -32,7 +32,7 @@ export default function Checkout() {
     event.preventDefault();
     setLoading(true);
     try {
-      const { data } = await api.post('/orders', { items: cart.map((item) => ({ productId: item.id, quantity: item.qty })), shippingAddress: { ...address, postalCode: address.postalCode || undefined }, idempotencyKey: idempotencyKey.current });
+      const { data } = await api.post('/orders', { items: cart.map((item) => ({ productId: item.originalProductId || item.id, quantity: item.qty })), shippingAddress: { ...address, postalCode: address.postalCode || undefined }, idempotencyKey: idempotencyKey.current });
       if (data.guestAccessToken) setGuestOrderToken(data.order.id, data.guestAccessToken);
       clearCart();
       toast.success('Commande enregistrée');
