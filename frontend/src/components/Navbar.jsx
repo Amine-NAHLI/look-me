@@ -38,20 +38,20 @@ export default function Navbar() {
     <div className="bg-[var(--black)] px-4 py-2 text-center text-[10px] font-medium uppercase tracking-[0.16em] text-white sm:text-[11px]">
       Paiement à la livraison disponible
     </div>
-    <motion.header style={{ boxShadow: navShadow }} className="sticky top-0 z-[1000] border-b border-[var(--border)] bg-[var(--surface)]">
-      <nav aria-label="Navigation principale" className="mx-auto grid h-[72px] max-w-[var(--content-max)] grid-cols-3 items-center px-4 md:px-6">
+    <motion.header style={{ boxShadow: navShadow }} className="sticky top-4 z-[1000] mx-4 md:mx-auto max-w-[var(--content-max)] rounded-[2rem] border border-white/60 bg-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-300">
+      <nav aria-label="Navigation principale" className="grid h-[64px] grid-cols-3 items-center px-4 md:px-6">
         <div className="flex items-center">
           <button type="button" aria-label="Ouvrir le menu" aria-expanded={isMenuOpen} onClick={() => setIsMenuOpen(true)} className="grid h-11 w-11 place-items-center text-[var(--dark)] lg:hidden"><Menu size={23} strokeWidth={1.5} aria-hidden="true" /></button>
           <div className="hidden items-center gap-7 lg:flex">
-            {links.map((link) => <Link key={link.path} to={link.path} className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--dark)] transition-colors hover:text-[var(--primary)]">{link.name}</Link>)}
-            {user?.role === 'admin' && <Link to="/admin/dashboard" className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--dark)] transition-colors hover:text-[var(--primary)]">Administration</Link>}
+            {links.map((link) => <Link key={link.path} to={link.path} className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--dark)] transition-colors hover:text-[var(--primary)]">{link.name}</Link>)}
+            {user?.role === 'admin' && <Link to="/admin/dashboard" className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--dark)] transition-colors hover:text-[var(--primary)]">Administration</Link>}
           </div>
         </div>
         <Link to="/" aria-label="LOOKME, accueil" className="justify-self-center"><Brand /></Link>
         <div className="flex items-center justify-self-end gap-1 sm:gap-2">
           <button type="button" aria-label="Rechercher dans le catalogue" onClick={() => navigate('/catalogue')} className="hidden h-11 w-11 place-items-center text-[var(--dark)] transition-colors hover:text-[var(--primary)] sm:grid"><Search size={20} strokeWidth={1.5} aria-hidden="true" /></button>
           <button type="button" aria-label={user ? 'Accéder à mon compte' : 'Se connecter ou créer un compte'} onClick={accountAction} className="grid h-11 w-11 place-items-center text-[var(--dark)] transition-colors hover:text-[var(--primary)]"><User size={20} strokeWidth={1.5} aria-hidden="true" /></button>
-          <button type="button" aria-label={`Ouvrir le panier, ${cartItemsCount} article${cartItemsCount > 1 ? 's' : ''}`} onClick={openCart} className="relative grid h-11 w-11 place-items-center text-[var(--dark)] transition-colors hover:text-[var(--primary)]"><ShoppingBag size={20} strokeWidth={1.5} aria-hidden="true" />{cartItemsCount > 0 && <span className="absolute right-0 top-0 grid min-h-4 min-w-4 place-items-center rounded-full bg-[var(--primary-hover)] px-1 text-[10px] font-bold text-white">{cartItemsCount}</span>}</button>
+          <button type="button" aria-label={`Ouvrir le panier, ${cartItemsCount} article${cartItemsCount > 1 ? 's' : ''}`} onClick={openCart} className="relative grid h-11 w-11 place-items-center text-[var(--dark)] transition-colors hover:text-[var(--primary)]"><ShoppingBag size={20} strokeWidth={1.5} aria-hidden="true" />{cartItemsCount > 0 && <span className="absolute right-0 top-0 grid min-h-4 min-w-4 place-items-center rounded-full bg-[var(--primary-hover)] px-1 text-[10px] font-bold text-white shadow-md">{cartItemsCount}</span>}</button>
         </div>
       </nav>
     </motion.header>
