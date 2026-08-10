@@ -35,12 +35,18 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* Secondary Bento 1 : Cinematic Video Loop */}
+          {/* Secondary Bento 1 : Cinematic Image (Replaces Video) */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="group relative aspect-square overflow-hidden rounded-[2.5rem] md:col-span-4"
           >
-            <video src="https://assets.mixkit.co/videos/preview/mixkit-girl-in-a-leather-jacket-walking-in-the-city-4322-large.mp4" autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105" />
+            <motion.img 
+              src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop" 
+              alt="Mode" 
+              className="absolute inset-0 h-full w-full object-cover" 
+              animate={{ scale: [1, 1.15, 1] }} 
+              transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+            />
             <div className="absolute inset-0 bg-black/20 transition-colors duration-500 group-hover:bg-transparent" />
             <div className="absolute inset-0 rounded-[2.5rem] border border-white/20" />
           </motion.div>

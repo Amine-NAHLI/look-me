@@ -5,8 +5,6 @@ import toast from 'react-hot-toast'
 import api from '../utils/axiosConfig'
 import { formatPrice } from '../utils/formatPrice'
 
-function Stat({ label, value, icon }) { return <article className="rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-5"><div className="flex items-center justify-between text-[var(--primary)]">{icon}<span className="text-xs font-semibold uppercase tracking-[.12em] text-[var(--gray)]">{label}</span></div><p className="mt-5 text-3xl font-semibold">{value}</p></article> }
-
 export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const dashboard = useQuery({ 
@@ -51,55 +49,88 @@ export default function AdminDashboard() {
     }
   };
 
-  return <main className="mx-auto max-w-7xl space-y-8 p-5 md:p-8">
-    <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[.16em] text-[var(--primary)]">LOOKME / Administration</p>
-        <h1 className="mt-2 font-heading text-4xl">Tableau de bord</h1>
-      </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <button onClick={handleReset} disabled={resetMutation.isPending} className="inline-flex items-center gap-2 rounded border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--dark)] hover:bg-gray-50">
-          <RefreshCw size={16} className={resetMutation.isPending ? 'animate-spin' : ''} />
-          Remettre à zéro
-        </button>
-        <Link className="inline-flex items-center gap-2 rounded bg-[var(--primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--primary-hover)]" to="/admin/products/new">Créer un produit <ArrowRight size={16} /></Link>
-      </div>
-    </header>
+  return (
+    <main className="relative min-h-screen bg-[var(--surface)] p-5 md:p-8 overflow-hidden">
+      {/* Background Aurora */}
+      <div className="pointer-events-none absolute -top-40 right-0 h-[600px] w-[600px] rounded-full bg-[var(--primary)]/10 blur-[120px]" />
+      
+      <div className="mx-auto max-w-7xl relative z-10 space-y-8">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between rounded-[2.5rem] border border-white/60 bg-white/40 p-8 shadow-[0_8px_32px_rgba(0,0,0,0.03)] backdrop-blur-xl">
+          <div>
+            <p className="inline-flex rounded-full border border-[var(--primary)]/20 bg-white/60 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--primary)] backdrop-blur-md">LOOKME / Administration</p>
+            <h1 className="mt-4 font-heading text-4xl lg:text-5xl">Tableau de bord</h1>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button onClick={handleReset} disabled={resetMutation.isPending} className="inline-flex items-center gap-2 rounded-full border border-[var(--primary)]/20 bg-white/60 px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-[var(--dark)] backdrop-blur-md transition-all hover:bg-white hover:shadow-md disabled:opacity-50">
+              <RefreshCw size={14} className={resetMutation.isPending ? 'animate-spin' : ''} />
+              Remettre à zéro
+            </button>
+            <Link className="group inline-flex items-center gap-3 rounded-full bg-[var(--primary)] px-8 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_8px_20px_rgba(194,24,91,0.25)] transition-all hover:scale-[1.02] hover:bg-[var(--primary-hover)] hover:shadow-[0_12px_24px_rgba(194,24,91,0.35)]" to="/admin/products/new">
+              Créer un produit <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+        </header>
 
-    {isStartOfMonth && (
-      <div className="flex flex-col items-start justify-between gap-4 rounded-[var(--radius-md)] border border-blue-200 bg-blue-50 p-5 sm:flex-row sm:items-center">
-        <div>
-          <h3 className="font-heading text-lg text-blue-900">Rapport mensuel disponible !</h3>
-          <p className="mt-1 text-sm text-blue-700">Le mois vient de se terminer. Vous pouvez télécharger le récapitulatif complet des commandes.</p>
+        {isStartOfMonth && (
+          <div className="flex flex-col items-start justify-between gap-4 rounded-[2rem] border border-blue-200 bg-blue-50/50 p-6 backdrop-blur-xl sm:flex-row sm:items-center">
+            <div>
+              <h3 className="font-heading text-xl text-blue-900">Rapport mensuel disponible !</h3>
+              <p className="mt-1 text-sm text-blue-700">Le mois vient de se terminer. Vous pouvez télécharger le récapitulatif complet des commandes.</p>
+            </div>
+            <button onClick={handleDownload} className="inline-flex shrink-0 items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-lg transition-all hover:scale-105 hover:bg-blue-700">
+              <Download size={14} />
+              Télécharger le PDF
+            </button>
+          </div>
+        )}
+
+        <section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+          <Stat label="Revenus de la période" value={formatPrice(revenue)} icon={<TrendingUp size={20} />} />
+          <Stat label="Commandes (période)" value={periodOrdersCount} icon={<ShoppingBag size={20} />} />
+          <Stat label="Total Produits" value={totalProducts} icon={<Package size={20} />} />
+          <Stat label="Stock faible" value={lowStockCount} icon={<AlertCircle size={20} />} />
+        </section>
+
+        <section className="overflow-hidden rounded-[2.5rem] border border-white/60 bg-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.03)] backdrop-blur-xl">
+          <div className="flex items-center justify-between p-8 border-b border-white/40">
+            <h2 className="font-heading text-3xl">Commandes récentes</h2>
+            <Link className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/60 px-5 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--dark)] backdrop-blur-md transition-all hover:bg-white hover:text-[var(--primary)]" to="/admin/orders">Toutes les commandes</Link>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[650px] text-left text-sm">
+              <thead className="bg-black/5 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--gray)]">
+                <tr><th className="p-6">Commande</th><th className="p-6">Client</th><th className="p-6">Total</th><th className="p-6">Statut</th></tr>
+              </thead>
+              <tbody className="divide-y divide-white/40">
+                {recentOrders.map((order) => (
+                  <tr key={order.id} className="transition-colors hover:bg-white/40">
+                    <td className="p-6 font-bold text-[var(--dark)]">{order.orderNumber}</td>
+                    <td className="p-6">{order.shippingFullName}</td>
+                    <td className="p-6 font-bold text-[var(--primary)]">{formatPrice(order.total)}</td>
+                    <td className="p-6 capitalize"><span className="inline-flex items-center rounded-full bg-white/80 px-3 py-1 text-xs font-medium shadow-sm">{order.status}</span></td>
+                  </tr>
+                ))}
+                {recentOrders.length === 0 && <tr><td colSpan="4" className="p-10 text-center text-sm font-medium text-[var(--gray)]">Aucune commande récente.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function Stat({ label, value, icon }) { 
+  return (
+    <article className="group relative overflow-hidden rounded-[2.5rem] border border-white/60 bg-white/40 p-8 shadow-[0_8px_32px_rgba(0,0,0,0.03)] backdrop-blur-xl transition-all hover:bg-white/60 hover:shadow-lg">
+      <div className="absolute -bottom-10 -right-10 h-32 w-32 rounded-full bg-[var(--primary)]/10 blur-[30px] transition-transform duration-700 group-hover:scale-150" />
+      <div className="relative z-10 flex items-center justify-between text-[var(--primary)]">
+        <div className="grid h-12 w-12 place-items-center rounded-full bg-white/60 shadow-sm backdrop-blur-md">
+          {icon}
         </div>
-        <button onClick={handleDownload} className="inline-flex shrink-0 items-center gap-2 rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
-          <Download size={16} />
-          Télécharger le PDF
-        </button>
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--gray)] group-hover:text-[var(--primary)] transition-colors">{label}</span>
       </div>
-    )}
-
-    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <Stat label="Revenus de la période" value={formatPrice(revenue)} icon={<TrendingUp aria-hidden="true" />} />
-      <Stat label="Commandes (période)" value={periodOrdersCount} icon={<ShoppingBag aria-hidden="true" />} />
-      <Stat label="Total Produits" value={totalProducts} icon={<Package aria-hidden="true" />} />
-      <Stat label="Stock faible" value={lowStockCount} icon={<AlertCircle aria-hidden="true" />} />
-    </section>
-
-    <section className="overflow-x-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-white">
-      <div className="flex items-center justify-between p-5">
-        <h2 className="font-heading text-2xl">Commandes récentes</h2>
-        <Link className="text-sm font-semibold text-[var(--primary)] underline" to="/admin/orders">Toutes les commandes</Link>
-      </div>
-      <table className="w-full min-w-[650px] text-left text-sm">
-        <thead className="border-y bg-black/[.025] text-xs uppercase tracking-[.12em] text-[var(--gray)]">
-          <tr><th className="p-4">Commande</th><th className="p-4">Client</th><th className="p-4">Total</th><th className="p-4">Statut</th></tr>
-        </thead>
-        <tbody>
-          {recentOrders.map((order) => <tr key={order.id} className="border-b last:border-0"><td className="p-4 font-medium">{order.orderNumber}</td><td className="p-4">{order.shippingFullName}</td><td className="p-4">{formatPrice(order.total)}</td><td className="p-4 capitalize">{order.status}</td></tr>)}
-          {recentOrders.length === 0 && <tr><td colSpan="4" className="p-8 text-center text-[var(--gray)]">Aucune commande récente.</td></tr>}
-        </tbody>
-      </table>
-    </section>
-  </main>
+      <p className="relative z-10 mt-8 font-heading text-4xl text-[var(--dark)] lg:text-5xl">{value}</p>
+    </article>
+  );
 }
