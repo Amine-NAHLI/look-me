@@ -24,7 +24,7 @@ async function createOrder({ user, input, guestAccessToken: accessToken }) {
   
   const result = await prisma.$transaction(async (tx) => {
     const ids = input.items.map((item) => item.productId);
-    const products = await tx.product.findMany({ where: { id: { in: ids }, status: 'active' } });
+    const products = await tx.product.findMany({ where: { id: { in: ids } } });
     if (products.length !== ids.length) throw new AppError('Un ou plusieurs produits ne sont plus disponibles', 409, 'PRODUCT_UNAVAILABLE');
     
     const byId = new Map(products.map((p) => [p.id, p]));
@@ -35,7 +35,7 @@ async function createOrder({ user, input, guestAccessToken: accessToken }) {
       if (!product || requested.quantity > product.stock) throw new AppError('Stock insuffisant', 409, 'INSUFFICIENT_STOCK');
       
       const update = await tx.product.updateMany({
-        where: { id: product.id, stock: { gte: requested.quantity }, status: 'active' },
+        where: { id: product.id, stock: { gte: requested.quantity } },
         data: { stock: { decrement: requested.quantity } }
       });
       if (update.count !== 1) throw new AppError('Stock insuffisant', 409, 'INSUFFICIENT_STOCK');
