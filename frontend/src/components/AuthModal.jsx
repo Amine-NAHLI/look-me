@@ -14,6 +14,7 @@ export default function AuthModal() {
   const [formData, setFormData] = useState(initialForm)
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [formError, setFormError] = useState('')
   const dialogRef = useRef(null)
   const lastActiveElement = useRef(null)
 
@@ -36,7 +37,10 @@ export default function AuthModal() {
     return () => { window.removeEventListener('keydown', onKeyDown); lastActiveElement.current?.focus?.() }
   }, [isAuthModalOpen, closeAuthModal])
 
-  const update = (event) => setFormData((current) => ({ ...current, [event.target.name]: event.target.value }))
+  const update = (event) => {
+    setFormError('')
+    setFormData((current) => ({ ...current, [event.target.name]: event.target.value }))
+  }
   const handleForgotPassword = async () => {
     if (!formData.email) { toast.error('Saisissez votre adresse e-mail avant de demander la réinitialisation.'); return }
     try {
@@ -50,6 +54,7 @@ export default function AuthModal() {
   const handleSubmit = async (event) => {
     event.preventDefault()
     setLoading(true)
+    setFormError('')
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/register'
       const payload = isLogin ? { email: formData.email, password: formData.password } : formData
@@ -61,7 +66,7 @@ export default function AuthModal() {
       toast.success(isLogin ? 'Connexion réussie.' : 'Compte créé avec succès.')
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.response?.data?.error?.message || error.message || 'Erreur inconnue';
-      toast.error(`Erreur: ${errorMsg}`);
+      setFormError(errorMsg);
     } finally { 
       setLoading(false);
     }
@@ -74,8 +79,9 @@ export default function AuthModal() {
         {!isLogin && <><Field label="Prénom" name="firstName" autoComplete="given-name" value={formData.firstName} onChange={update} required /><Field label="Téléphone" name="phone" type="tel" autoComplete="tel" value={formData.phone} onChange={update} required /></>}
         <Field label="Adresse e-mail" name="email" type="email" autoComplete="email" value={formData.email} onChange={update} required />
         <div><div className="mb-2 flex items-center justify-between"><label htmlFor="auth-password" className="text-sm font-semibold">Mot de passe</label>{isLogin && <button type="button" onClick={handleForgotPassword} className="text-xs font-semibold text-[var(--primary)] underline underline-offset-4">Mot de passe oublié ?</button>}</div><div className="relative"><input id="auth-password" name="password" type={showPassword ? 'text' : 'password'} autoComplete={isLogin ? 'current-password' : 'new-password'} minLength="8" required value={formData.password} onChange={update} className="min-h-11 w-full border border-[var(--border)] bg-white px-3 pr-12 text-base outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-light)]" /><button type="button" aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'} onClick={() => setShowPassword((value) => !value)} className="absolute right-0 top-0 grid h-11 w-11 place-items-center text-[var(--gray)] hover:text-[var(--primary)]">{showPassword ? <EyeOff size={19} aria-hidden="true" /> : <Eye size={19} aria-hidden="true" />}</button></div>{!isLogin && <p className="mt-2 text-xs text-[var(--gray)]">Au moins 8 caractères.</p>}</div>
+        {formError && <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-100">{formError}</div>}
         <button type="submit" disabled={loading} className="inline-flex min-h-12 w-full items-center justify-center gap-2 bg-[var(--primary)] px-5 text-xs font-bold uppercase tracking-[.14em] text-white hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-60">{loading && <Loader2 size={17} className="animate-spin" aria-hidden="true" />}{isLogin ? 'Se connecter' : 'Créer mon compte'}</button>
-        <p className="pt-1 text-center text-sm text-[var(--gray)]">{isLogin ? 'Nouveau chez LOOKME ?' : 'Vous avez déjà un compte ?'} <button type="button" onClick={() => setIsLogin((value) => !value)} className="font-semibold text-[var(--primary)] underline underline-offset-4">{isLogin ? 'Créer un compte' : 'Se connecter'}</button></p>
+        <p className="pt-1 text-center text-sm text-[var(--gray)]">{isLogin ? 'Nouveau chez LOOKME ?' : 'Vous avez déjà un compte ?'} <button type="button" onClick={() => { setIsLogin((value) => !value); setFormError(''); }} className="font-semibold text-[var(--primary)] underline underline-offset-4">{isLogin ? 'Créer un compte' : 'Se connecter'}</button></p>
       </form>
     </motion.section>
   </motion.div>}</AnimatePresence>
