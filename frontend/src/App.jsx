@@ -31,6 +31,7 @@ const ProductsList = lazy(() => import('./pages/Admin/ProductsList'))
 const ProductForm = lazy(() => import('./pages/Admin/ProductForm'))
 const CategoriesManager = lazy(() => import('./pages/Admin/CategoriesManager'))
 const AdminOrdersList = lazy(() => import('./pages/Admin/OrdersList'))
+const AdminOrderDetail = lazy(() => import('./pages/Admin/OrderDetail'))
 
 const queryClient = new QueryClient()
 
@@ -98,6 +99,7 @@ function App() {
                 <Route path="products/:id/edit" element={<ProductForm />} />
                 <Route path="categories" element={<CategoriesManager />} />
                 <Route path="orders" element={<AdminOrdersList />} />
+                <Route path="orders/:id" element={<AdminOrderDetail />} />
               </Route>
               
               <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />

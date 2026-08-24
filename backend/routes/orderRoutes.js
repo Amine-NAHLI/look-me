@@ -11,7 +11,7 @@ const PdfDocument = require('pdfkit-table');
 
 const router = express.Router();
 
-router.post('/', optionalProtect, validate(createOrderSchema), asyncHandler(async (req, res) => {
+router.post('/', protect, validate(createOrderSchema), asyncHandler(async (req, res) => {
   const result = await createOrder({ user: req.user, input: req.body, guestAccessToken: req.get('x-guest-order-token') });
   res.status(result.replayed ? 200 : 201).json({ order: result.order, ...(result.guestAccessToken ? { guestAccessToken: result.guestAccessToken } : {}) }); 
 }));
@@ -137,6 +137,38 @@ router.get('/:id', optionalProtect, validate(orderParams, 'params'), asyncHandle
 router.patch('/:id/status', protect, admin, validate(orderParams, 'params'), validate(statusSchema), asyncHandler(async (req, res) => { 
   const order = await changeOrderStatus({ orderId: req.params.id, ...req.body, actor: req.user }); 
   res.json({ order }); 
+}));
+
+router.delete('/:id', protect, admin, validate(orderParams, 'params'), asyncHandler(async (req, res) => {
+  const order = await prisma.order.findUnique({ where: { id: req.params.id }, include: { items: true } });
+  if (!order) throw new AppError('Commande introuvable', 404, 'ORDER_NOT_FOUND');
+  
+  await prisma.$transaction(async (tx) => {
+    // Si la commande n'est pas annulée, on restaure les stocks avant de supprimer
+    if (order.status !== 'cancelled') {
+      for (const item of order.items) {
+        if (item.variantId) {
+          await tx.productVariant.updateMany({ where: { id: item.variantId }, data: { stock: { increment: item.quantity } } });
+        } else if (item.productId) {
+          await tx.product.updateMany({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } });
+        }
+      }
+    }
+    
+    await tx.order.delete({ where: { id: req.params.id } });
+    
+    await tx.auditLog.create({
+      data: {
+        actorId: req.user.id,
+        action: 'order.deleted',
+        resourceType: 'order',
+        resourceId: req.params.id,
+        metadata: { orderNumber: order.orderNumber, originalStatus: order.status }
+      }
+    });
+  });
+  
+  res.status(204).end();
 }));
 
 module.exports = router;

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { AlertCircle, ArrowRight, Package, ShoppingBag, TrendingUp, Download, RefreshCw } from 'lucide-react'
+import { AlertCircle, ArrowRight, Package, ShoppingBag, TrendingUp, Download, RefreshCw, Trash2, Eye } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import api from '../utils/axiosConfig'
@@ -21,6 +21,15 @@ export default function AdminDashboard() {
     onError: () => toast.error('Erreur lors de la remise à zéro.')
   });
 
+  const deleteOrder = useMutation({
+    mutationFn: (id) => api.delete(`/orders/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      toast.success('Commande supprimée');
+    },
+    onError: (error) => toast.error(error.response?.data?.error?.message || 'Erreur lors de la suppression')
+  });
+
   if (dashboard.isLoading) return <main className="p-8" aria-busy="true">Chargement de l’administration…</main>
   if (dashboard.isError) return <main className="p-8" role="alert">Impossible de charger l’administration.</main>
   
@@ -31,6 +40,12 @@ export default function AdminDashboard() {
   const handleReset = () => {
     if (window.confirm('Voulez-vous vraiment clôturer et remettre les compteurs à zéro ? Vos commandes ne seront pas supprimées.')) {
       resetMutation.mutate();
+    }
+  };
+
+  const handleDelete = (order) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer définitivement la commande ${order.orderNumber} ?\n\nLes stocks des produits seront restaurés.`)) {
+      deleteOrder.mutate(order.id);
     }
   };
 
@@ -99,7 +114,7 @@ export default function AdminDashboard() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[650px] text-left text-sm">
               <thead className="bg-black/5 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--gray)]">
-                <tr><th className="p-6">Commande</th><th className="p-6">Client</th><th className="p-6">Total</th><th className="p-6">Statut</th></tr>
+                <tr><th className="p-6">Commande</th><th className="p-6">Client</th><th className="p-6">Total</th><th className="p-6">Statut</th><th className="p-6 text-right">Action</th></tr>
               </thead>
               <tbody className="divide-y divide-white/40">
                 {recentOrders.map((order) => (
@@ -108,9 +123,15 @@ export default function AdminDashboard() {
                     <td className="p-6">{order.shippingFullName}</td>
                     <td className="p-6 font-bold text-[var(--primary)]">{formatPrice(order.total)}</td>
                     <td className="p-6 capitalize"><span className="inline-flex items-center rounded-full bg-white/80 px-3 py-1 text-xs font-medium shadow-sm">{order.status}</span></td>
+                    <td className="p-6 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link to={`/admin/orders/${order.id}`} className="inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--primary)]/20 text-[var(--primary)] transition-colors hover:bg-[var(--primary)] hover:text-white" title="Voir les détails"><Eye size={15} /></Link>
+                        <button type="button" onClick={() => handleDelete(order)} disabled={deleteOrder.isPending} className="inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--border)] text-[var(--gray)] transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50" title="Supprimer"><Trash2 size={15} /></button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
-                {recentOrders.length === 0 && <tr><td colSpan="4" className="p-10 text-center text-sm font-medium text-[var(--gray)]">Aucune commande récente.</td></tr>}
+                {recentOrders.length === 0 && <tr><td colSpan="5" className="p-10 text-center text-sm font-medium text-[var(--gray)]">Aucune commande récente.</td></tr>}
               </tbody>
             </table>
           </div>
