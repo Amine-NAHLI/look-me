@@ -11,7 +11,7 @@ const initialAddress = { fullName: '', phone: '', addressLine1: '', city: '', po
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { cart, getCartTotal, clearCart, setGuestOrderToken } = useUIStore();
+  const { cart, getCartTotal, clearCart, setGuestOrderToken, user, openAuthModal } = useUIStore();
   const [address, setAddress] = useState(initialAddress);
   const [loading, setLoading] = useState(false);
   const idempotencyKey = useRef(crypto.randomUUID());
@@ -30,12 +30,17 @@ export default function Checkout() {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (!user) {
+      toast.error('Veuillez vous connecter pour passer commande');
+      openAuthModal();
+      return;
+    }
     setLoading(true);
     try {
-      const { data } = await api.post('/orders', { items: cart.map((item) => ({ productId: item.originalProductId || item.id, quantity: item.qty })), shippingAddress: { ...address, postalCode: address.postalCode || undefined }, idempotencyKey: idempotencyKey.current });
+      const { data } = await api.post('/orders', { items: cart.map((item) => ({ productId: item.originalProductId || item.id, quantity: item.qty, variantId: item.originalProductId ? item.id : undefined })), shippingAddress: { ...address, postalCode: address.postalCode || undefined }, idempotencyKey: idempotencyKey.current });
       if (data.guestAccessToken) setGuestOrderToken(data.order.id, data.guestAccessToken);
       clearCart();
-      toast.success('Commande enregistrée');
+      toast.success('Commande enregistrée. Visitez votre profil pour suivre le progrès.');
       navigate(`/order-success/${data.order.id}`, { replace: true });
     } catch (error) {
       const message = error.response?.data?.error?.message || 'La commande n’a pas pu être enregistrée. Vérifiez votre panier et réessayez.';

@@ -8,11 +8,11 @@ import { formatPrice } from '../utils/formatPrice';
 export default function OrderSuccess() {
   const { id } = useParams();
   const guestOrderToken = useUIStore((state) => state.guestOrderTokens[id]);
-  const user = useUIStore((state) => state.user);
+
   const { data, isLoading, isError } = useQuery({ queryKey: ['order-success', id], queryFn: () => api.get(`/orders/${id}`, { headers: guestOrderToken ? { 'X-Guest-Order-Token': guestOrderToken } : {} }).then(({ data: response }) => response.order), enabled: Boolean(id), retry: false });
 
   if (isLoading) return <main className="grid min-h-[60vh] place-items-center" aria-busy="true"><Loader2 className="animate-spin text-[var(--primary)]" /></main>;
-  if (isError || !data) return <main className="grid min-h-[60vh] place-items-center p-6 text-center"><div><h1 className="font-heading text-3xl">Commande introuvable</h1><p className="mt-3 text-[var(--gray)]">Pour une commande invitée, utilisez le même navigateur que lors de la confirmation.</p><Link to="/catalogue" className="mt-6 inline-block underline">Retour au catalogue</Link></div></main>;
+  if (isError || !data) return <main className="grid min-h-[60vh] place-items-center p-6 text-center"><div><h1 className="font-heading text-3xl">Commande introuvable</h1><p className="mt-3 text-[var(--gray)]">Vérifiez que vous êtes bien connecté à votre compte.</p><Link to="/catalogue" className="mt-6 inline-block underline">Retour au catalogue</Link></div></main>;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#050505] text-white">
@@ -50,11 +50,9 @@ export default function OrderSuccess() {
         </section>
 
         <div className="mt-14 flex flex-col justify-center gap-5 sm:flex-row">
-          {user && (
-            <Link to={`/profil/commandes/${data.id}`} className="group inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-[var(--primary)] px-8 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_8px_20px_rgba(194,24,91,0.25)] transition-all hover:scale-[1.02] hover:bg-[var(--primary-hover)] hover:shadow-[0_12px_24px_rgba(194,24,91,0.35)]">
-              Suivre ma commande
-            </Link>
-          )}
+          <Link to={`/profil/commandes/${data.id}`} className="group inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-[var(--primary)] px-8 text-[11px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_8px_20px_rgba(194,24,91,0.25)] transition-all hover:scale-[1.02] hover:bg-[var(--primary-hover)] hover:shadow-[0_12px_24px_rgba(194,24,91,0.35)]">
+            Suivre ma commande dans mon profil
+          </Link>
           <Link to="/catalogue" className="inline-flex min-h-14 items-center justify-center rounded-full border border-white/20 bg-white/5 px-8 text-[11px] font-bold uppercase tracking-[0.2em] text-white backdrop-blur-md transition-all hover:bg-white/10 hover:text-[var(--primary)]">
             Continuer mes achats
           </Link>
