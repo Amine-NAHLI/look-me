@@ -50,14 +50,14 @@ router.post('/', protect, admin, uploadLimiter, upload.single('image'), asyncHan
   
   let metadata; 
   try { 
-    metadata = await sharp(req.file.buffer, { limitInputPixels: 25_000_000 }).metadata(); 
+    metadata = await sharp(req.file.buffer).metadata(); 
   } catch { 
     throw new AppError('Image invalide', 400, 'INVALID_FILE'); 
   }
   
   if (!['jpeg', 'png', 'webp'].includes(metadata.format)) throw new AppError('Format d’image invalide', 400, 'INVALID_FILE');
   
-  const processedBuffer = await sharp(req.file.buffer, { limitInputPixels: 25_000_000 })
+  const processedBuffer = await sharp(req.file.buffer)
     .rotate()
     .resize({ width: 1600, height: 2000, fit: 'inside', withoutEnlargement: true })
     .webp({ quality: 82 })
