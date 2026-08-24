@@ -34,6 +34,27 @@ async function createOrder({ user, input, guestAccessToken: accessToken }) {
       const product = byId.get(requested.productId);
       if (!product || requested.quantity > product.stock) throw new AppError('Stock insuffisant', 409, 'INSUFFICIENT_STOCK');
       
+      let variantName = product.name;
+      let variantSku = product.sku || null;
+      let variantSize = null;
+      let variantColor = null;
+
+      if (requested.variantId) {
+        const variant = await tx.productVariant.findUnique({ where: { id: requested.variantId } });
+        if (!variant || requested.quantity > variant.stock) throw new AppError('Stock de variante insuffisant', 409, 'INSUFFICIENT_STOCK');
+        
+        const updateVariant = await tx.productVariant.updateMany({
+          where: { id: variant.id, stock: { gte: requested.quantity } },
+          data: { stock: { decrement: requested.quantity } }
+        });
+        if (updateVariant.count !== 1) throw new AppError('Stock de variante insuffisant', 409, 'INSUFFICIENT_STOCK');
+        
+        variantName = `${product.name} - ${variant.size || variant.name || 'Variante'}`;
+        variantSku = variant.sku || product.sku || null;
+        variantSize = variant.size || null;
+        variantColor = variant.color || null;
+      }
+      
       const update = await tx.product.updateMany({
         where: { id: product.id, stock: { gte: requested.quantity } },
         data: { stock: { decrement: requested.quantity } }
@@ -41,11 +62,14 @@ async function createOrder({ user, input, guestAccessToken: accessToken }) {
       if (update.count !== 1) throw new AppError('Stock insuffisant', 409, 'INSUFFICIENT_STOCK');
       
       lines.push({ 
-        productId: product.id, 
-        name: product.name, 
+        productId: product.id,
+        variantId: requested.variantId || null,
+        name: variantName, 
         slug: product.slug, 
         image: product.images[0] || null, 
-        sku: product.sku || null, 
+        sku: variantSku,
+        size: variantSize,
+        color: variantColor,
         unitPrice: product.price, 
         discount: 0, 
         quantity: requested.quantity, 
@@ -104,10 +128,18 @@ async function changeOrderStatus({ orderId, status, note, actor }) {
     
     if (status === 'cancelled') {
       for (const item of order.items) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { increment: item.quantity } }
-        });
+        if (item.variantId) {
+          await tx.productVariant.updateMany({
+            where: { id: item.variantId },
+            data: { stock: { increment: item.quantity } }
+          });
+        }
+        if (item.productId) {
+          await tx.product.updateMany({
+            where: { id: item.productId },
+            data: { stock: { increment: item.quantity } }
+          });
+        }
       }
     }
 

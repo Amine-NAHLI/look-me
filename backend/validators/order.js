@@ -1,4 +1,4 @@
 const { z, objectId } = require('./common');
 const address = z.object({ fullName: z.string().trim().min(2).max(120), phone: z.string().trim().min(8).max(30), addressLine1: z.string().trim().min(2).max(300), city: z.string().trim().min(2).max(100), postalCode: z.string().trim().max(20).optional() }).strict();
-const line = z.object({ productId: objectId, quantity: z.coerce.number().int().min(1).max(20) }).strict();
+const line = z.object({ productId: objectId, variantId: z.string().uuid().optional(), quantity: z.coerce.number().int().min(1).max(20) }).strict();
 module.exports = { createOrderSchema: z.object({ items: z.array(line).min(1).max(30), shippingAddress: address, billingAddress: address.optional(), idempotencyKey: z.string().uuid() }).strict(), statusSchema: z.object({ status: z.enum(['confirmed', 'shipped', 'delivered', 'cancelled']), note: z.string().trim().max(500).optional() }).strict(), orderParams: z.object({ id: objectId }).strict() };
